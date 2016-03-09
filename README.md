@@ -1,4 +1,4 @@
-# ETHZ SAE Project 1 (2016)
+# ETHZ SAE Project 1 (2016) -- Group Sherlock
 
 This repo is home to group Sherlock's project 1 of the [Sofware Architecture and Engineering course taught at ETH Zürich in 2016](pm.inf.ethz.ch/education/courses/software-engineering-and-architecture.html).
 
