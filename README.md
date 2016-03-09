@@ -2,7 +2,7 @@
 
 This repo is home to group Sherlock's project 1 of the [Sofware Architecture and Engineering course taught at ETH Zürich in 2016](pm.inf.ethz.ch/education/courses/software-engineering-and-architecture.html).
 
-## Team members
+## Team Members
 
 *in alphabetic order*
 - [@andrinadenzler](https://github.com/andrinadenzler)
@@ -13,7 +13,7 @@ This repo is home to group Sherlock's project 1 of the [Sofware Architecture and
 
 Please see the `doc/` folder.
 
-## Repo layout
+## Repository Layout
 
 - `bin/` contains executables necessary for project-related files
 - `deliverables/` contains the work in a hand-in-friendly format (e.g. PDF)
