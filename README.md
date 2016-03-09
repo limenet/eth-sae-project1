@@ -5,9 +5,9 @@ This repo is home to group Sherlock's project 1 of the [Sofware Architecture and
 ## Team members
 
 *in alphabetic order*
-- [@andrinadenzler](https://github.com(andrinadenzler))
-- [@limenet](https://github.com(limenet))
-- [@sandra7](https://github.com(sandra7))
+- [@andrinadenzler](https://github.com/andrinadenzler)
+- [@limenet](https://github.com/limenet)
+- [@sandra7](https://github.com/sandra7)
 
 ## Requirements & Specification
 
