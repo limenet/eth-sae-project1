@@ -1,15 +1,16 @@
-# Elements that are not encodable in UML
+# Elements that are not encodable in the UML class diagram
 
 *The non-UML-encdoable element is listed first. An optional explanation is in parantheses.)
 
-- Variable has to be declared at least once. (We only modelled it has to be declared at most once)
-- Mapping to formal parameters. (This is done internally)
-- Return statement terminates execution.
+- Functions consist of a *linear sequence* of statements. We don’t say anything about the ordering of the statements within a function.
+- Actual parameters are mapped to formal parameters. (This would be done by a semantic analyser).
+- Return statement terminates the execution.
 - A function may not contain unreachable statements.
-- No recursion.
-- All functions are called transitively from the main function.
-- Variables must be declared before the first use such as the first assignment.
-- Variables can only be used is expressions after it they have been assigned.
-- Dead assignments and dead variables.
-- No assignments in parameters.
-- Typing rules.
+- Recursion is not allowed.
+- All functions are transitively called from the main function.
+- A variable has to be declared at least once. (We only modelled it has to be declared at most once)
+- Variables must be declared in the same function before the first use such as the first assignment.
+- Variables can only be used is expressions after they have been assigned to.
+- We do not allow dead variables or dead assignments.
+- There are no assignments to parameters.
+- Typing rules for assignments, function calls and return statements.
