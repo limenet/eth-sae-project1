@@ -1,28 +1,30 @@
-sig LINEARProgram{
+sig LINEARProgram {
 	mainFunc: one mainFunction,
 	funcs: some Function
 }
 
 sig Expr {
-	parent: lone Expr
-}
+	parent: lone Expr,
+	children: some Expr,
+}{parent = ~children}
 
-sig VariableReference extends Expr{}
+sig VariableReference extends Expr {}
 
-sig Variable{}
+sig Variable {}
 
-sig Function{
+sig Function {
 	returnType: one Type,
-	returnStat: one ReturnStatement,
-	arguments: some FormalParameter
+	firstStmt: one Statement,
+	returnStmt: one ReturnStatement,
+	formals: some FormalParameter
 }
 
-sig Literal extends Expr{}
+sig Literal extends Expr {}
 
-sig Statement{
+sig Statement {
 	follows: lone Statement,
-	preceeds: lone Statement,
-}
+	preceeds: lone Statement
+}{ follows = ~preceeds }
 
 sig VarDecl extends Statement{
 	var: one Variable
@@ -35,15 +37,16 @@ sig Type{
 sig FormalParameter{}
 
 sig AssignStatement extends Statement{
-	var: one VariableReference
-}
+	left: one VariableReference,
+	right: one Expr,
+}{p_subTypeOf[left.Type, right.Type]}
 
 sig ReturnStatement extends Statement{}{ no preceeds }
 
 one sig MainFunction extends Function{}
 
 sig CallExpression extends Expr{
-	actualParameter: some Expr
+	actuals: some Expr
 }
 
 /*
