@@ -1,6 +1,6 @@
 # Elements that are not encodable in the UML class diagram
 
-*The non-UML-encdoable element is listed first. An optional explanation is in parantheses.)
+(The non-UML-encdoable element is listed first. An optional explanation is in parantheses.)
 
 - Functions consist of a *linear sequence* of statements. We don’t say anything about the ordering of the statements within a function.
 - Actual parameters are mapped to formal parameters. (This would be done by a semantic analyser).
