@@ -6,7 +6,7 @@ sig LINEARProgram {
 sig Expr {
 	parent: lone Expr,
 	children: some Expr,
-}{parent = ~children}
+} {parent = ~children}
 
 sig VariableReference extends Expr {}
 
@@ -24,28 +24,30 @@ sig Literal extends Expr {}
 sig Statement {
 	follows: lone Statement,
 	preceeds: lone Statement
-}{ follows = ~preceeds }
+} {follows = ~preceeds}
 
-sig VarDecl extends Statement{
+sig VarDecl extends Statement {
 	var: one Variable
 }
 
-sig Type{
+sig Type {
 	parent: lone Type
 }
 
-sig FormalParameter{}
+sig FormalParameter {}
 
-sig AssignStatement extends Statement{
+sig AssignStatement extends Statement {
 	left: one VariableReference,
 	right: one Expr,
-}{p_subTypeOf[left.Type, right.Type]}
+} {p_subTypeOf[left.Type, right.Type]}
 
-sig ReturnStatement extends Statement{}{ no preceeds }
+sig ReturnStatement extends Statement {
 
-one sig MainFunction extends Function{}
+} {no preceeds}
 
-sig CallExpression extends Expr{
+one sig MainFunction extends Function {}
+
+sig CallExpression extends Expr {
 	actuals: some Expr
 }
 
@@ -60,18 +62,18 @@ fun p_numFunctionCalls[]: Int {}
 
 fun p_expressionTypes[]: set Type {}
 
-fun p_statementsInFunction[f:Function]: set Statement {}
+fun p_statementsInFunction[f: Function]: set Statement {}
 
 fun p_statementsAfter[s: Statement]: set Statement {}
 
-fun p_parameters[f:Function]: FormalParameter {}
+fun p_parameters[f: Function]: FormalParameter {}
 
-fun p_subExprs[e:Expr]: set Expr {}
+fun p_subExprs[e: Expr]: set Expr {}
 
 
-pred p_containsCall[f:Function] {}
+pred p_containsCall[f: Function] {}
 
-pred p_isAssigned[v:Variable] {
+pred p_isAssigned[v: Variable] {
     v in one AssignStatement.left
 }
 
