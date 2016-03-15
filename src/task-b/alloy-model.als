@@ -1,55 +1,59 @@
 sig LINEARProgram {
-	mainFunc: one mainFunction,
-	funcs: some Function
+  mainFunction: one MainFunction,
+  functions: some Function, // at least the mainFunction
 }
-
-sig Expr {
-	parent: lone Expr,
-	children: some Expr,
-} {parent = ~children}
-
-sig VariableReference extends Expr {}
-
-sig Variable {}
 
 sig Function {
-	returnType: one Type,
-	firstStmt: one Statement,
-	returnStmt: one ReturnStatement,
-	formals: some FormalParameter
+  returnType: one Type,
+  firstStmt: one Statement,
+  returnStmt: one ReturnStatement,
+  formals: set FormalParameter, // may have no formal parameters
 }
 
-sig Literal extends Expr {}
+one sig MainFunction extends Function {}
 
 sig Statement {
-	follows: lone Statement,
-	preceeds: lone Statement
-} {follows = ~preceeds}
+  predecessor: lone Statement,
+  successor: lone Statement,
+} 
+fact {predecessor = ~successor}
+
+sig AssignStatement extends Statement {
+  left: one VariableReference,
+  right: one Expr,
+} // {p_subTypeOf[left.Type, right.Type]}
+
+sig ReturnStatement extends Statement {
+} {no successor}
 
 sig VarDecl extends Statement {
-	var: one Variable
-}
-
-sig Type {
-	parent: lone Type
+  var: one Variable,
 }
 
 sig FormalParameter {}
 
-sig AssignStatement extends Statement {
-	left: one VariableReference,
-	right: one Expr,
-} {p_subTypeOf[left.Type, right.Type]}
-
-sig ReturnStatement extends Statement {
-
-} {no preceeds}
-
-one sig MainFunction extends Function {}
-
-sig CallExpression extends Expr {
-	actuals: some Expr
+sig Expr {
+  parentExpr: lone Expr,
+  children: set Expr, // may have zero children
 }
+fact {parentExpr = ~children}
+
+sig CallExpr extends Expr {
+  actuals: set Expr,
+}
+
+sig Literal extends Expr {}
+
+sig VariableReference extends Expr {
+  refersTo: one Variable,
+}
+
+sig Type {
+  supertype: lone Type,
+  subtypes: set Type,
+}
+
+sig Variable {}
 
 /*
  * Functions and predicates below express
@@ -57,6 +61,8 @@ sig CallExpression extends Expr {
  * and probably do not work just yet
  * - @limenet
  */
+
+/*
 
 fun p_numFunctionCalls[]: Int {}
 
@@ -95,4 +101,4 @@ pred p_subtypeOf[t1: Type, t2: Type] {
 
 pred p_assignsTo[s: Statement, vd: VarDecl] {}
 
-
+*/
