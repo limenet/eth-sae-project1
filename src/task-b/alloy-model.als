@@ -64,9 +64,9 @@ sig Variable {}
 
 /*
 
-fun p_numFunctionCalls[]: Int {}
+fun p_numFunctionCalls: Int {}
 
-fun p_expressionTypes[]: set Type {}
+fun p_expressionTypes: set Type {}
 
 fun p_statementsInFunction[f: Function]: set Statement {}
 
