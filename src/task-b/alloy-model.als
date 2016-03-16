@@ -22,21 +22,28 @@ sig AssignStatement extends Statement {
   left: one VariableReference,
   right: one Expr,
 } // {p_subTypeOf[left.Type, right.Type]}
+fact {left.type = right.type} // TODO
 
 sig ReturnStatement extends Statement {
+  returnValue: one Expr,
 } {no successor}
 
 sig VarDecl extends Statement {
-  var: one Variable,
+  variable: one Variable,
+  type: one Type,
 }
 
-sig FormalParameter {}
+sig FormalParameter {
+  variable: one Variable,
+  type: one Type,
+}
 
 sig Expr {
-  parentExpr: lone Expr,
+  parent: lone Expr,
   children: set Expr, // may have zero children
+  type: one Type,
 }
-fact {parentExpr = ~children}
+fact {parent = ~children}
 
 sig CallExpr extends Expr {
   actuals: set Expr,
@@ -52,6 +59,7 @@ sig Type {
   supertype: lone Type,
   subtypes: set Type,
 }
+fact {supertype = subtypes}
 
 sig Variable {}
 
