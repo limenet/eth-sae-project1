@@ -60,6 +60,8 @@ sig Variable {}
  * "what I want them to do"
  * and probably do not work just yet
  * - @limenet
+ *
+ * commented out code contains syntax/type errors
  */
 
 /*
