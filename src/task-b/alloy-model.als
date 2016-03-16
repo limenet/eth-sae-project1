@@ -1,6 +1,15 @@
+pred show {}
+run show
+
+/* --------------------------------------------------------------------------------
+ * Signatures
+ * -------------------------------------------------------------------------------- */
+
 sig LINEARProgram {
   mainFunction: one MainFunction,
-  functions: some Function, // at least the mainFunction
+  functions: some Function,
+  // TODO: decide whether mainFunction is in functions
+  // some -> at least the mainFunction or set -> if not contained
 }
 
 sig Function {
@@ -9,6 +18,7 @@ sig Function {
   returnStmt: one ReturnStatement,
   formals: set FormalParameter, // may have no formal parameters
 }
+// TODO: functions can't be shared between programs
 
 one sig MainFunction extends Function {}
 
@@ -16,7 +26,8 @@ sig Statement {
   predecessor: lone Statement,
   successor: lone Statement,
 }
-fact {predecessor = ~successor}
+fact {predecessor = ~successor} // TODO: link them to actual predecessor/successor statements
+// TODO: statements can't be shared between functions
 
 sig AssignStatement extends Statement {
   left: one VariableReference,
@@ -43,7 +54,8 @@ sig Expr {
   children: set Expr, // may have zero children
   type: one Type,
 }
-fact {parent = ~children}
+fact {parent = ~children} // TODO: link them to actual parent/child expressions
+// TODO: expresssions are exclusively owned by another expression or a statement
 
 sig CallExpr extends Expr {
   actuals: set Expr,
@@ -59,7 +71,7 @@ sig Type {
   supertype: lone Type,
   subtypes: set Type,
 }
-fact {supertype = subtypes}
+fact {supertype = ~subtypes}
 
 sig Variable {}
 
@@ -71,6 +83,10 @@ sig Variable {}
  *
  * commented out code contains syntax/type errors
  */
+
+/* --------------------------------------------------------------------------------
+ * Functions
+ * -------------------------------------------------------------------------------- */
 
 /*
 
@@ -86,6 +102,13 @@ fun p_parameters [f: Function]: FormalParameter {}
 
 fun p_subExprs [e: Expr]: set Expr {}
 
+*/
+
+/* --------------------------------------------------------------------------------
+ * Predicates
+ * -------------------------------------------------------------------------------- */
+
+/*
 
 pred p_containsCall [f: Function] {}
 
