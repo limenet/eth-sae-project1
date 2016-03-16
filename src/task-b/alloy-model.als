@@ -15,7 +15,7 @@ one sig MainFunction extends Function {}
 sig Statement {
   predecessor: lone Statement,
   successor: lone Statement,
-} 
+}
 fact {predecessor = ~successor}
 
 sig AssignStatement extends Statement {
