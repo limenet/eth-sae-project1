@@ -12,23 +12,23 @@ sig Function {
   formals: disj set FormalParameter, // may have no formal parameters
 }
 
-one sig MainFunction extends Function {}
+one sig MainFunction extends Function {} {no formals}
 
 abstract sig Statement {
   predecessor: lone Statement,
   successor: lone Statement,
 }
-fact {predecessor = ~successor} // TODO: link them to actual predecessor/successor statements
-// TODO: statements can't be shared between functions
+fact {predecessor = ~successor}
+// TODO: link them to actual predecessor/successor statements, i.e. can go from firstStmt to returnStmt using predecessor relations.
 
 sig AssignStatement extends Statement {
-  left: one VariableReference,
-  right: one Expr,
+  left: disj one VariableReference,
+  right: disj one Expr,
 } // {p_subTypeOf[left.Type, right.Type]}
 fact {left.type = right.type} // TODO
 
 sig ReturnStatement extends Statement {
-  returnValue: one Expr,
+  returnValue: disj one Expr,
 } {no successor}
 
 sig VarDecl extends Statement {
@@ -43,14 +43,14 @@ sig FormalParameter {
 
 abstract sig Expr {
   parent: lone Expr,
-  children: set Expr, // may have zero direct children
+  children: disj set Expr, // may have zero direct children
   type: one Type,
 }
 fact {parent = ~children} // TODO: link them to actual parent/child expressions
 // TODO: expresssions are exclusively owned by another expression or a statement
 
 sig CallExpr extends Expr {
-  actuals: set Expr,
+  actuals: disj set Expr,
 }
 
 sig Literal extends Expr {}
@@ -61,7 +61,7 @@ sig VariableReference extends Expr {
 
 sig Type {
   supertype: lone Type,
-  subtypes: set Type,
+  subtypes: disj set Type,
 }
 fact {supertype = ~subtypes}
 
