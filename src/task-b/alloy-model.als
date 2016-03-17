@@ -88,50 +88,68 @@ sig Variable {}
  * Functions
  * -------------------------------------------------------------------------------- */
 
-/*
+// Returns the number of function calls in the program.
+// TODO: Given this description, I suppose that we don't need to model programs as a signature, right?
+fun p_numFunctionCalls: Int {
+  #CallExpr
+}
 
-fun p_numFunctionCalls: Int {}
 
-fun p_expressionTypes: set Type {}
+// Returns the types of all expressions.
+fun p_expressionTypes: set Type {
+  Expr.type
+}
 
-fun p_statementsInFunction [f: Function]: set Statement {}
+// Returns the types of all literals.
+fun p_literalTypes: set Type {
+  Literal.type
+}
 
-fun p_statementsAfter [s: Statement]: set Statement {}
+// Returns all statements directly contained in the body of a function.
+fun p_statementsInFunction [f: Function]: set Statement {
+  f.firstStmt.*successor
+}
 
-fun p_parameters [f: Function]: FormalParameter {}
+// Returns all statements contained after s in the same function.
+fun p_statementsAfter [s: Statement]: set Statement {
+  s.^successor
+}
 
-fun p_subExprs [e: Expr]: set Expr {}
+// Returns the formal parameters of function f.
+fun p_parameters [f: Function]: FormalParameter {
+  f.formals
+}
 
-*/
+// Returns the direct subexpressions of e.
+fun p_subExprs [e: Expr]: set Expr {
+  e.children
+}
 
 /* --------------------------------------------------------------------------------
  * Predicates
  * -------------------------------------------------------------------------------- */
 
-/*
 
 pred p_containsCall [f: Function] {}
 
 pred p_isAssigned [v: Variable] {
-    v in one AssignStatement.left
+//    v in one AssignStatement.left
 }
 
 pred p_isRead [v: Variable] {
-    v in some VariableReference
+//    v in some VariableReference
 }
 
 pred p_isDeclared [v: Variable] {
-    v in one VarDecl
+//    v in one VarDecl
 }
 
 pred p_isParameter [v: Variable] {
-    v in Function.formalParams
+//    v in Function.formalParams
 }
 
 pred p_subtypeOf [t1: Type, t2: Type] {
-    t1.parent = t2
+//    t1.parent = t2
 }
 
 pred p_assignsTo [s: Statement, vd: VarDecl] {}
-
-*/
