@@ -5,24 +5,16 @@ run show
  * Signatures
  * -------------------------------------------------------------------------------- */
 
-sig LINEARProgram {
-  mainFunction: one MainFunction,
-  functions: some Function,
-  // TODO: decide whether mainFunction is in functions
-  // some -> at least the mainFunction or set -> if not contained
-}
-
 sig Function {
   returnType: one Type,
-  firstStmt: one Statement,
-  returnStmt: one ReturnStatement,
-  formals: set FormalParameter, // may have no formal parameters
+  firstStmt: disj one Statement,
+  returnStmt: disj one ReturnStatement,
+  formals: disj set FormalParameter, // may have no formal parameters
 }
-// TODO: functions can't be shared between programs
 
 one sig MainFunction extends Function {}
 
-sig Statement {
+abstract sig Statement {
   predecessor: lone Statement,
   successor: lone Statement,
 }
@@ -49,7 +41,7 @@ sig FormalParameter {
   type: one Type,
 }
 
-sig Expr {
+abstract sig Expr {
   parent: lone Expr,
   children: set Expr, // may have zero direct children
   type: one Type,
@@ -89,7 +81,6 @@ fact {
  * -------------------------------------------------------------------------------- */
 
 // Returns the number of function calls in the program.
-// TODO: Given this description, I suppose that we don't need to model programs as a signature, right?
 fun p_numFunctionCalls: Int {
   #CallExpr
 }
@@ -115,7 +106,7 @@ fun p_statementsAfter [s: Statement]: set Statement {
 }
 
 // Returns the formal parameters of function f.
-fun p_parameters [f: Function]: FormalParameter {
+fun p_parameters [f: Function]: set FormalParameter {
   f.formals
 }
 
@@ -127,15 +118,6 @@ fun p_subExprs [e: Expr]: set Expr {
 /* --------------------------------------------------------------------------------
  * Predicates
  * -------------------------------------------------------------------------------- */
-
-/*
- * Predicates below express
- * "what I want them to do"
- * and probably do not work just yet
- * - @limenet
- *
- * commented out code contains syntax/type errors
- */
 
 // true iff f contains a function call directly in its body.
 pred p_containsCall [f: Function] {
