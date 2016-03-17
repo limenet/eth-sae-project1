@@ -40,18 +40,18 @@ sig ReturnStatement extends Statement {
 } {no successor}
 
 sig VarDecl extends Statement {
-  variable: one Variable,
+  variable: disj one Variable, // disj: declared by at most one VarDecl statement
   type: one Type,
 }
 
 sig FormalParameter {
-  variable: one Variable,
+  variable: disj one Variable, // disj: declared by at most one FormalParameter
   type: one Type,
 }
 
 sig Expr {
   parent: lone Expr,
-  children: set Expr, // may have zero children
+  children: set Expr, // may have zero direct children
   type: one Type,
 }
 fact {parent = ~children} // TODO: link them to actual parent/child expressions
@@ -74,6 +74,15 @@ sig Type {
 fact {supertype = ~subtypes}
 
 sig Variable {}
+
+/* --------------------------------------------------------------------------------
+ * Facts
+ * -------------------------------------------------------------------------------- */
+
+// Variables are declared exactly once.
+fact {
+  all v: Variable | p_isDeclared[v]
+}
 
 /* --------------------------------------------------------------------------------
  * Functions
@@ -119,7 +128,6 @@ fun p_subExprs [e: Expr]: set Expr {
  * Predicates
  * -------------------------------------------------------------------------------- */
 
-
 /*
  * Predicates below express
  * "what I want them to do"
@@ -131,41 +139,45 @@ fun p_subExprs [e: Expr]: set Expr {
 
 // true iff f contains a function call directly in its body.
 pred p_containsCall [f: Function] {
-  some CallExpr & p_statementsInFunction[f].exprInStatement
+  some CallExpr & p_statementsInFunction[f].containsExpr
 }
 
-// true iff v appears on the left side of an assignment anywhere the program.
+// true iff v appears on the left side of an assignment anywhere in the program.
 pred p_isAssigned [v: Variable] {
-//    v in one AssignStatement.left
+  v in AssignStatement.left.refersTo
 }
 
-// true iff v appears in an expression anywhere the program.
+// true iff v appears in an expression anywhere in the program.
 pred p_isRead [v: Variable] {
-//    v in some VariableReference
+  v in VariableReference.refersTo
 }
 
 // true iff v is declared exactly once.
 pred p_isDeclared [v: Variable] {
-//    v in one VarDecl
+  (v in (VarDecl.variable + FormalParameter.variable)) && // at least once
+  (v not in (VarDecl.variable & FormalParameter.variable)) // at most once
 }
 
 // true iff v is declared as a parameter.
 pred p_isParameter [v: Variable] {
-//    v in Function.formalParams
+  v in FormalParameter.variable
 }
 
-// true iff t1 is a subtype of t2.
+// true iff t1 is a subtype of t2. Returns true if types are equal.
 pred p_subtypeOf [t1: Type, t2: Type] {
-//    t1.parent = t2
+  t2 in t1.*supertype
 }
 
 // true iff s assigns to the variable declared by vd.
-pred p_assignsTo [s: Statement, vd: VarDecl] {}
+pred p_assignsTo [s: Statement, vd: VarDecl] {
+  s.left.refersTo = vd.variable
+}
 
 /* --------------------------------------------------------------------------------
  * Helper Functions
  * -------------------------------------------------------------------------------- */
 
-fun exprInStatement: set Statement -> Expr {
-  right + returnType
-}
+// Returns tuples of statements and their direct subexpressions.
+fun containsExpr: set Statement -> Expr {
+  left + right + returnType
+} // TODO: do we really need to distinguish between Variables and VariableReferences? The Variable field in a VarDecl would also be an Expr.
