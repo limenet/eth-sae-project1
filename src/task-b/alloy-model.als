@@ -6,34 +6,31 @@ run show
  * -------------------------------------------------------------------------------- */
 
 sig Function {
-  returnType: one Type,
+  returnType: one Type, // Functions have a return type.
   firstStmt: disj one Statement,
-  returnStmt: disj one ReturnStatement,
-  formals: disj set FormalParameter, // may have no formal parameters
+  returnStmt: disj one ReturnStatement, // Each function execution must be terminated by a return statement.
+  formals: disj set FormalParameter, // Functions have a set (may be zero) of formal parameters with types.
 }
 
-one sig MainFunction extends Function {} {no formals}
+one sig MainFunction extends Function {}
 
 abstract sig Statement {
   predecessor: lone Statement,
   successor: lone Statement,
 }
-fact {predecessor = ~successor}
-// TODO: link them to actual predecessor/successor statements, i.e. can go from firstStmt to returnStmt using predecessor relations.
 
 sig AssignStatement extends Statement {
   left: disj one VariableReference,
   right: disj one Expr,
-} // {p_subTypeOf[left.Type, right.Type]}
-fact {left.type = right.type} // TODO
+}
 
 sig ReturnStatement extends Statement {
-  returnValue: disj one Expr,
-} {no successor}
+  returnValue: disj one Expr, // A return statement carries an expression that defines which value is returned by the function.
+}
 
 sig VarDecl extends Statement {
   variable: disj one Variable, // disj: declared by at most one VarDecl statement
-  type: one Type,
+  type: one Type, // Declaration statements declare variables of a specific type.
 }
 
 sig FormalParameter {
@@ -44,26 +41,24 @@ sig FormalParameter {
 abstract sig Expr {
   parent: lone Expr,
   children: disj set Expr, // may have zero direct children
-  type: one Type,
+  type: one Type, // Expressions are typically associated with a type.
 }
-fact {parent = ~children} // TODO: link them to actual parent/child expressions
-// TODO: expresssions are exclusively owned by another expression or a statement
 
 sig CallExpr extends Expr {
-  actuals: disj set Expr,
+  function: one Function, // A function can be called in a corresponding call expression.
+  actuals: disj set Expr, // A call expression is assiociated with a set of expressions that serve as actual parameters.
 }
 
-sig Literal extends Expr {}
+sig Literal extends Expr {} // We do not model the value of literals.
 
 sig VariableReference extends Expr {
   refersTo: one Variable,
 }
 
 sig Type {
-  supertype: lone Type,
+  supertype: lone Type, // Each type can have up to one supertype.
   subtypes: disj set Type,
 }
-fact {supertype = ~subtypes}
 
 sig Variable {}
 
@@ -71,9 +66,59 @@ sig Variable {}
  * Facts
  * -------------------------------------------------------------------------------- */
 
-// Variables are declared exactly once.
+// Functions consist of a linear sequence of statements.
+fact {
+  (predecessor = ~successor) &&
+  (all f: Function | f.returnStmt in f.firstStmt.^successor)
+}
+
+// TODO: Actual parameters are mapped to formal parameters.
+
+// A return statement terminates the execution of the function body.
+// A function may not contain unreachable statements. i.e. has no successor statement.
+fact {
+  all rs: ReturnStatement | no rs.successor
+}
+
+// TODO: The first statement has no predecessor.
+
+// TODO: Recursion is not allowed.
+
+// There is one main function that takes no parameters.
+fact {
+  no MainFunction.formals
+}
+
+// TODO: There is one main function from which all other functions are transitively called.
+
+// Variables are declared exactly once, either in a corresponding declaration statement or as function parameter.
 fact {
   all v: Variable | p_isDeclared[v]
+}
+
+// TODO: Declaration statements must appear in the same function before the first use.
+
+// TODO: A variable that has been declared can be assigned to using an assignment statement.
+
+// TODO: Once the variable has been assigned to, it can be used in expressions in subsequent statements.
+
+// TODO: We do not allow dead variables (variables that are never read).
+
+// TODO: We do not allow dead assignments (assignments that are not followed by a read of the variable).
+
+// TODO: Parameters should never be assigned to.
+
+// Expressions form trees, and nodes of expression trees are never shared, i.e. every node has a unique parent.
+fact {
+  parent = ~children // TODO: link them to actual parent/child expressions
+}
+
+// The usual typing rules apply to assignments, function calls and return statements.
+fact {
+  (supertype = ~subtypes) &&
+  (all a: AssignStatement | p_subtypeOf [a.right.type, a.left.type]) &&
+  // TODO: actual and formal parameters match (all c: CallExpr, f: Function) &&
+  (all f1: Function | p_subtypeOf [f1.returnStmt.returnValue.type, f1.type])
 }
 
 /* --------------------------------------------------------------------------------
