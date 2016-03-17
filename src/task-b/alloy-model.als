@@ -75,15 +75,6 @@ fact {supertype = ~subtypes}
 
 sig Variable {}
 
-/*
- * Functions and predicates below express
- * "what I want them to do"
- * and probably do not work just yet
- * - @limenet
- *
- * commented out code contains syntax/type errors
- */
-
 /* --------------------------------------------------------------------------------
  * Functions
  * -------------------------------------------------------------------------------- */
@@ -93,7 +84,6 @@ sig Variable {}
 fun p_numFunctionCalls: Int {
   #CallExpr
 }
-
 
 // Returns the types of all expressions.
 fun p_expressionTypes: set Type {
@@ -130,26 +120,52 @@ fun p_subExprs [e: Expr]: set Expr {
  * -------------------------------------------------------------------------------- */
 
 
-pred p_containsCall [f: Function] {}
+/*
+ * Predicates below express
+ * "what I want them to do"
+ * and probably do not work just yet
+ * - @limenet
+ *
+ * commented out code contains syntax/type errors
+ */
 
+// true iff f contains a function call directly in its body.
+pred p_containsCall [f: Function] {
+  some CallExpr & p_statementsInFunction[f].exprInStatement
+}
+
+// true iff v appears on the left side of an assignment anywhere the program.
 pred p_isAssigned [v: Variable] {
 //    v in one AssignStatement.left
 }
 
+// true iff v appears in an expression anywhere the program.
 pred p_isRead [v: Variable] {
 //    v in some VariableReference
 }
 
+// true iff v is declared exactly once.
 pred p_isDeclared [v: Variable] {
 //    v in one VarDecl
 }
 
+// true iff v is declared as a parameter.
 pred p_isParameter [v: Variable] {
 //    v in Function.formalParams
 }
 
+// true iff t1 is a subtype of t2.
 pred p_subtypeOf [t1: Type, t2: Type] {
 //    t1.parent = t2
 }
 
+// true iff s assigns to the variable declared by vd.
 pred p_assignsTo [s: Statement, vd: VarDecl] {}
+
+/* --------------------------------------------------------------------------------
+ * Helper Functions
+ * -------------------------------------------------------------------------------- */
+
+fun exprInStatement: set Statement -> Expr {
+  right + returnType
+}
