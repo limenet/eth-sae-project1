@@ -15,8 +15,8 @@ sig Function {
 one sig MainFunction extends Function {}
 
 abstract sig Statement {
-  predecessor: lone Statement,
-  successor: lone Statement,
+  predecessor: disj lone Statement,
+  successor: disj lone Statement,
 }
 
 sig AssignStatement extends Statement {
@@ -29,21 +29,20 @@ sig ReturnStatement extends Statement {
 }
 
 sig VarDecl extends Statement {
-  variable: disj one Variable, // disj: declared by at most one VarDecl statement
+  declaredVar: disj one Variable,
   type: one Type, // Declaration statements declare variables of a specific type.
 }
 
 sig FormalParameter {
-  variable: disj one Variable, // disj: declared by at most one FormalParameter
+  declaredVar: disj one Variable,
   type: one Type,
-  usedAsFormal: disj set Expr,
 }
 
 abstract sig Expr {
   parent: lone Expr,
   children: disj set Expr, // may have zero direct children
   type: one Type, // Expressions are typically associated with a type.
-  usedAsActual: lone FormalParameter,
+  formal: lone FormalParameter,
 }
 
 sig CallExpr extends Expr {
@@ -54,7 +53,7 @@ sig CallExpr extends Expr {
 sig Literal extends Expr {} // We do not model the value of literals.
 
 sig VariableReference extends Expr {
-  refersTo: one Variable,
+  referredVar: one Variable,
 }
 
 sig Type {
@@ -71,16 +70,17 @@ sig Variable {}
 // Functions consist of a linear sequence of statements.
 fact {
   (predecessor = ~successor) &&
-  (all f: Function | f.returnStmt in f.firstStmt.^successor)
+  (all f: Function | f.returnStmt in f.firstStmt.*successor) && // take reflexive, transitive closure to allow functions with only one statement
+  (all s: Statement | s != s.successor) // not reflexive
 }
-
+/*
 // Actual parameters are mapped to formal parameters.
 fact {
   (usedAsFormal = ~usedAsActual) &&
   (CallExpr.actuals = FormalParameter.usedAsFormal) && // connect expressions to formals
   (all ce: CallExpr | #ce.actuals = #ce.function.formals) // number of arguments match
 }
-
+*/
 // A return statement terminates the execution of the function body.
 // A function may not contain unreachable statements. i.e. the return statement has no successor statement.
 fact {
@@ -91,7 +91,7 @@ fact {
 fact {
   all f: Function | no f.firstStmt.predecessor
 }
-
+/*
 // Recursion is not allowed.
 fact {
   all f: Function | f not in f.functionCalls
@@ -125,7 +125,7 @@ fact {
 
 // We do not allow dead assignments (assignments that are not followed by a read of the variable).
 fact {
-  all a: AssignStatement | a.left.refersTo in p_statementsAfter[a].(containsExpr.*children.refersTo - left.refersTo)
+  all a: AssignStatement | a.left.referredVar in p_statementsAfter[a].(containsExpr.*children.referredVar - left.referredVar)
 }
 
 // Parameters should never be assigned to.
@@ -146,7 +146,7 @@ fact {
   (all ce: CallExpr, a: ce.actuals | p_subtypeOf[a.type, a.usedAsActual.type]) &&
   (all f1: Function | p_subtypeOf[f1.returnStmt.returnValue.type, f1.type])
 }
-
+*/
 /* --------------------------------------------------------------------------------
  * Functions
  * -------------------------------------------------------------------------------- */
@@ -197,23 +197,23 @@ pred p_containsCall [f: Function] {
 
 // true iff v appears on the left side of an assignment anywhere in the program.
 pred p_isAssigned [v: Variable] {
-  v in AssignStatement.left.refersTo
+  v in AssignStatement.left.referredVar
 }
 
 // true iff v appears in an expression anywhere in the program. Exclude writes.
 pred p_isRead [v: Variable] {
-  v in (VariableReference.refersTo - AssignStatement.left.refersTo)
+  v in (VariableReference.referredVar - AssignStatement.left.referredVar)
 }
 
 // true iff v is declared exactly once.
 pred p_isDeclared [v: Variable] {
-  (v in (VarDecl.variable + FormalParameter.variable)) && // at least once
-  (v not in (VarDecl.variable & FormalParameter.variable)) // at most once
+  (v in (VarDecl.declaredVar + FormalParameter.declaredVar)) && // at least once
+  (v not in (VarDecl.declaredVar & FormalParameter.declaredVar)) // at most once
 }
 
 // true iff v is declared as a parameter.
 pred p_isParameter [v: Variable] {
-  v in FormalParameter.variable
+  v in FormalParameter.declaredVar
 }
 
 // true iff t1 is a subtype of t2. Returns true if types are equal.
@@ -223,7 +223,7 @@ pred p_subtypeOf [t1: Type, t2: Type] {
 
 // true iff s assigns to the variable declared by vd.
 pred p_assignsTo [s: Statement, vd: VarDecl] {
-  s.left.refersTo = vd.variable
+  s.left.referredVar = vd.declaredVar
 }
 
 /* --------------------------------------------------------------------------------
