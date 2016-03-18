@@ -74,10 +74,11 @@ fact {
   (all f: Function | f.returnStmt in f.firstStmt.^successor)
 }
 
-// TODO: Actual parameters are mapped to formal parameters.
+// Actual parameters are mapped to formal parameters.
 fact {
-  (usedAsFormal = ~usedAsActual) && // connect expressions to formals
-  (all ce: CallExpr | #ce.actuals = #ce.function.formals)
+  (usedAsFormal = ~usedAsActual) &&
+  (CallExpr.actuals = FormalParameter.usedAsFormal) && // connect expressions to formals
+  (all ce: CallExpr | #ce.actuals = #ce.function.formals) // number of arguments match
 }
 
 // A return statement terminates the execution of the function body.
@@ -91,7 +92,10 @@ fact {
   all f: Function | no f.firstStmt.predecessor
 }
 
-// TODO: Recursion is not allowed.
+// Recursion is not allowed.
+fact {
+  all f: Function | f not in f.functionCalls
+}
 
 // There is one main function that takes no parameters.
 fact {
@@ -99,6 +103,9 @@ fact {
 }
 
 // TODO: There is one main function from which all other functions are transitively called.
+fact {
+  all f: (Function - MainFunction) | f in MainFunction.^functionCalls
+}
 
 // Variables are declared exactly once, either in a corresponding declaration statement or as function parameter.
 fact {
@@ -136,8 +143,7 @@ fact {
 fact {
   (supertype = ~subtypes) &&
   (all a: AssignStatement | p_subtypeOf[a.right.type, a.left.type]) &&
-  // TODO: actual and formal parameters match. We need some connection between pairs of actuals and formals.
-  // (all ce: CallExpr | p_subtypeOf[ce.actuals, ce.function.formals]) &&
+  (all ce: CallExpr, a: ce.actuals | p_subtypeOf[a.type, a.usedAsActual.type]) &&
   (all f1: Function | p_subtypeOf[f1.returnStmt.returnValue.type, f1.type])
 }
 
@@ -228,3 +234,8 @@ pred p_assignsTo [s: Statement, vd: VarDecl] {
 fun containsExpr: set Statement -> Expr {
   left + right + returnType
 } // TODO: The Variable field in a VarDecl would also be an Expr?
+
+// Returns tuples of functions and the called functions.
+fun functionCalls: set Function -> Function {
+  (firstStmt.*successor.containsExpr.*children :> CallExpr).function
+}
