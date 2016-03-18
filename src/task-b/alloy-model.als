@@ -36,12 +36,14 @@ sig VarDecl extends Statement {
 sig FormalParameter {
   variable: disj one Variable, // disj: declared by at most one FormalParameter
   type: one Type,
+  usedAsFormal: disj set Expr,
 }
 
 abstract sig Expr {
   parent: lone Expr,
   children: disj set Expr, // may have zero direct children
   type: one Type, // Expressions are typically associated with a type.
+  usedAsActual: lone FormalParameter,
 }
 
 sig CallExpr extends Expr {
@@ -73,14 +75,21 @@ fact {
 }
 
 // TODO: Actual parameters are mapped to formal parameters.
-
-// A return statement terminates the execution of the function body.
-// A function may not contain unreachable statements. i.e. has no successor statement.
 fact {
-  all rs: ReturnStatement | no rs.successor
+  (usedAsFormal = ~usedAsActual) && // connect expressions to formals
+  (all ce: CallExpr | #ce.actuals = #ce.function.formals)
 }
 
-// TODO: The first statement has no predecessor.
+// A return statement terminates the execution of the function body.
+// A function may not contain unreachable statements. i.e. the return statement has no successor statement.
+fact {
+  all rs: ReturnStatement | no p_statementsAfter[rs]
+}
+
+// The first statement has no predecessor.
+fact {
+  all f: Function | no f.firstStmt.predecessor
+}
 
 // TODO: Recursion is not allowed.
 
@@ -102,23 +111,34 @@ fact {
 
 // TODO: Once the variable has been assigned to, it can be used in expressions in subsequent statements.
 
-// TODO: We do not allow dead variables (variables that are never read).
+// We do not allow dead variables (variables that are never read).
+fact {
+  all v: Variable | p_isRead[v]
+}
 
-// TODO: We do not allow dead assignments (assignments that are not followed by a read of the variable).
+// We do not allow dead assignments (assignments that are not followed by a read of the variable).
+fact {
+  all a: AssignStatement | a.left.refersTo in p_statementsAfter[a].(containsExpr.*children.refersTo - left.refersTo)
+}
 
-// TODO: Parameters should never be assigned to.
+// Parameters should never be assigned to.
+fact {
+  all v: Variable | p_isParameter[v] implies not p_isAssigned[v]
+}
 
 // Expressions form trees, and nodes of expression trees are never shared, i.e. every node has a unique parent.
 fact {
-  parent = ~children // TODO: link them to actual parent/child expressions
+  (parent = ~children) &&
+  (actuals = children) // children of CallExpr are actuals: link them to actual parent/child expressions
 }
 
 // The usual typing rules apply to assignments, function calls and return statements.
 fact {
   (supertype = ~subtypes) &&
-  (all a: AssignStatement | p_subtypeOf [a.right.type, a.left.type]) &&
-  // TODO: actual and formal parameters match (all c: CallExpr, f: Function) &&
-  (all f1: Function | p_subtypeOf [f1.returnStmt.returnValue.type, f1.type])
+  (all a: AssignStatement | p_subtypeOf[a.right.type, a.left.type]) &&
+  // TODO: actual and formal parameters match. We need some connection between pairs of actuals and formals.
+  // (all ce: CallExpr | p_subtypeOf[ce.actuals, ce.function.formals]) &&
+  (all f1: Function | p_subtypeOf[f1.returnStmt.returnValue.type, f1.type])
 }
 
 /* --------------------------------------------------------------------------------
@@ -174,9 +194,9 @@ pred p_isAssigned [v: Variable] {
   v in AssignStatement.left.refersTo
 }
 
-// true iff v appears in an expression anywhere in the program.
+// true iff v appears in an expression anywhere in the program. Exclude writes.
 pred p_isRead [v: Variable] {
-  v in VariableReference.refersTo
+  v in (VariableReference.refersTo - AssignStatement.left.refersTo)
 }
 
 // true iff v is declared exactly once.
@@ -207,4 +227,4 @@ pred p_assignsTo [s: Statement, vd: VarDecl] {
 // Returns tuples of statements and their direct subexpressions.
 fun containsExpr: set Statement -> Expr {
   left + right + returnType
-} // TODO: do we really need to distinguish between Variables and VariableReferences? The Variable field in a VarDecl would also be an Expr.
+} // TODO: The Variable field in a VarDecl would also be an Expr?
