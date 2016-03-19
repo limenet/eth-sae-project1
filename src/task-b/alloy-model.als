@@ -1,4 +1,7 @@
-pred show {}
+pred show {
+  (some f: Function | f not in MainFunction) &&
+  (some f: Function | f.firstStmt != f.returnStmt)
+}
 run show
 
 /* --------------------------------------------------------------------------------
@@ -67,7 +70,10 @@ sig Variable {}
  * -------------------------------------------------------------------------------- */
 
 fact {
-  Statement in (Function.firstStmt + Statement.successor) // all statements belong to a function
+  (Function.statements = Statement) && // all statements belong to a function
+  ((Statement.exprs + Expr.children) = Expr) && // all expressions have a parent
+  (no (Statement.exprs & Expr.children)) && (no (Statement.assignedValue & Statement.returnValue)) &&
+  (all disj f1, f2: Function | disj[f1.statements.subExprs.referredVar, f2.statements.subExprs.referredVar]) // TODO: all variables are local to a function
 }
 
 // Functions consist of a linear sequence of statements.
@@ -82,7 +88,7 @@ fact {
   (all ce: CallExpr | #ce.actuals = #ce.function.formals) // number of arguments match
 }
 
-// TODO: A return statement terminates the execution of the function body.
+// TODO: A return statement terminates the execution of the function body. Not a static constraint.
 
 // A function may not contain unreachable statements. i.e. the return statement has no successor statement.
 fact {
@@ -111,7 +117,7 @@ fact {
 
 // TODO: Declaration statements must appear in the same function before the first use.
 fact {
-//  all vd: VarDecl | vd.declaredVar not in (VariableReference - p_statementsAfter[vd].exprs.*children).referredVar
+//  all vd: VarDecl | vd.declaredVar not in (VariableReference - p_statementsAfter[vd].subExprs).referredVar
 }
 
 // A variable that has been declared can be assigned to using an assignment statement.
@@ -121,7 +127,7 @@ fact {
 
 // Once the variable has been assigned to, it can be used in expressions in subsequent statements.
 fact {
-  all a: AssignStatement | a.assignedTo not in (VariableReference - p_statementsAfter[a].exprs.*children).referredVar
+  all a: AssignStatement | a.assignedTo not in (VariableReference - p_statementsAfter[a].subExprs).referredVar
 }
 
 // We do not allow dead variables (variables that are never read).
@@ -131,7 +137,7 @@ fact {
 
 // We do not allow dead assignments (assignments that are not followed by a read of the variable).
 fact {
-  all a: AssignStatement | a.assignedTo in p_statementsAfter[a].exprs.*children.referredVar
+  all a: AssignStatement | a.assignedTo in p_statementsAfter[a].subExprs.referredVar
 }
 
 // Parameters should never be assigned to.
@@ -143,7 +149,7 @@ fact {
 fact {
   (parent = ~children) && (all e: Expr | e != e.parent) && // parent/children relationship is not reflexive
   (children = {c: CallExpr, e: Expr | c->e->FormalParameter in actuals}) // children of CallExpr are actuals: link them to actual parent/child expressions
-} // TODO: not shared among different statements
+}
 
 // The usual typing rules apply to assignments, function calls and return statements.
 fact {
@@ -240,7 +246,7 @@ pred p_assignsTo [s: Statement, vd: VarDecl] {
 
 // Returns tuples of the form (caller, callee): (Function, Function), i.e. the function caller calls the function calle in its body.
 fun functions: set Function -> Function {
-  (statements.exprs.*children :> CallExpr).function
+  (statements.subExprs :> CallExpr).function
 }
 
 // Returns tuples of functions and their statements.
@@ -251,4 +257,9 @@ fun statements: set Function -> Statement {
 // Returns tuples of statements and their direct subexpressions.
 fun exprs: set Statement -> Expr {
   assignedValue + returnValue
+}
+
+// Returns tuples of statements and all their subexpressions.
+fun subExprs: set Statement -> Expr {
+  exprs.*children
 }
