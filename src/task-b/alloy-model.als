@@ -42,12 +42,11 @@ abstract sig Expr {
   parent: lone Expr,
   children: disj set Expr, // may have zero direct children
   type: one Type, // Expressions are typically associated with a type.
-  formal: lone FormalParameter,
 }
 
 sig CallExpr extends Expr {
   function: one Function, // A function can be called in a corresponding call expression.
-  actuals: disj set Expr, // A call expression is assiociated with a set of expressions that serve as actual parameters.
+  actuals: Expr lone -> lone FormalParameter, // A call expression is assiociated with a set of expressions that serve as actual parameters and are mapped to formal parameters.
 }
 
 sig Literal extends Expr {} // We do not model the value of literals.
@@ -77,14 +76,12 @@ fact {
   (all f: Function | no f.firstStmt.predecessor) && // the first statement has no predecessor
   (all f: Function | f.returnStmt in p_statementsInFunction[f])
 }
-/*
+
 // Actual parameters are mapped to formal parameters.
 fact {
-  (usedAsFormal = ~usedAsActual) &&
-  (CallExpr.actuals = FormalParameter.usedAsFormal) && // connect expressions to formals
   (all ce: CallExpr | #ce.actuals = #ce.function.formals) // number of arguments match
 }
-*/
+
 // TODO: A return statement terminates the execution of the function body.
 
 // A function may not contain unreachable statements. i.e. the return statement has no successor statement.
@@ -122,9 +119,9 @@ fact {
   all vd: VarDecl | all a: AssignStatement | p_assignsTo[a, vd] implies (a in p_statementsAfter[vd])
 }
 
-// TODO: Once the variable has been assigned to, it can be used in expressions in subsequent statements.
+// Once the variable has been assigned to, it can be used in expressions in subsequent statements.
 fact {
-  // all a: AssignStatement | a.left.referredVar in Variable implies (in p_statementsAfter[a])
+  all a: AssignStatement | a.assignedTo not in (VariableReference - p_statementsAfter[a].exprs.*children).referredVar
 }
 
 // We do not allow dead variables (variables that are never read).
@@ -145,20 +142,18 @@ fact {
 // Expressions form trees, and nodes of expression trees are never shared, i.e. every node has a unique parent.
 fact {
   (parent = ~children) && (all e: Expr | e != e.parent) && // parent/children relationship is not reflexive
-  (children = actuals) // children of CallExpr are actuals: link them to actual parent/child expressions
+  (children = {c: CallExpr, e: Expr | c->e->FormalParameter in actuals}) // children of CallExpr are actuals: link them to actual parent/child expressions
 } // TODO: not shared among different statements
 
-/*
 // The usual typing rules apply to assignments, function calls and return statements.
-fact {
-  (all ce: CallExpr, a: ce.actuals | p_subtypeOf[a.type, a.usedAsActual.type])
-}
-*/
 fact {
   (supertype = ~subtypes) && (all t: Type | t != t.supertype) && // supertye/subtypes relationship is not reflexive
   (all a: AssignStatement | all vd: VarDecl | p_assignsTo[a, vd] implies p_subtypeOf[a.assignedValue.type, vd.type]) &&
+  (#{e: Expr, f: FormalParameter | CallExpr->e->f in actuals && p_subtypeOf[e.type, f.type]} = #actuals) && // TODO
   (all f: Function | p_subtypeOf[f.returnStmt.returnValue.type, f.returnType])
 }
+
+// TODO: all vr: VariableReference | all vd: VarDecl | (vr.referredVar = vd.declaredVar) implies vr.type = vd.type
 
 /* --------------------------------------------------------------------------------
  * Functions
@@ -240,7 +235,7 @@ pred p_assignsTo [s: Statement, vd: VarDecl] {
 }
 
 /* --------------------------------------------------------------------------------
- * Helper Functions
+ * Additional Relations
  * -------------------------------------------------------------------------------- */
 
 // Returns tuples of the form (caller, callee): (Function, Function), i.e. the function caller calls the function calle in its body.
