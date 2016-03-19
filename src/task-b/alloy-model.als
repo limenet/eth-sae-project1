@@ -67,11 +67,15 @@ sig Variable {}
  * Facts
  * -------------------------------------------------------------------------------- */
 
+fact {
+  Statement in (Function.firstStmt + Statement.successor) // all statements belong to a function
+}
+
 // Functions consist of a linear sequence of statements.
 fact {
-  (predecessor = ~successor) &&
-  (all f: Function | f.returnStmt in f.firstStmt.*successor) && // take reflexive, transitive closure to allow functions with only one statement
-  (all s: Statement | s != s.successor) // not reflexive
+  (predecessor = ~successor) && (all s: Statement | s != s.predecessor) && // predecessor/successor relationship is not reflexive
+  (all f: Function | no f.firstStmt.predecessor) && // the first statement has no predecessor
+  (all f: Function | f.returnStmt in p_statementsInFunction[f])
 }
 /*
 // Actual parameters are mapped to formal parameters.
@@ -81,20 +85,16 @@ fact {
   (all ce: CallExpr | #ce.actuals = #ce.function.formals) // number of arguments match
 }
 */
-// A return statement terminates the execution of the function body.
+// TODO: A return statement terminates the execution of the function body.
+
 // A function may not contain unreachable statements. i.e. the return statement has no successor statement.
 fact {
   all rs: ReturnStatement | no p_statementsAfter[rs]
 }
 
-// The first statement has no predecessor.
-fact {
-  all f: Function | no f.firstStmt.predecessor
-}
-/*
 // Recursion is not allowed.
 fact {
-  all f: Function | f not in f.functionCalls
+  no f: Function | f in f.^functions
 }
 
 // There is one main function that takes no parameters.
@@ -102,9 +102,9 @@ fact {
   no MainFunction.formals
 }
 
-// TODO: There is one main function from which all other functions are transitively called.
+// There is one main function from which all other functions are transitively called.
 fact {
-  all f: (Function - MainFunction) | f in MainFunction.^functionCalls
+  Function in MainFunction.*functions
 }
 
 // Variables are declared exactly once, either in a corresponding declaration statement or as function parameter.
@@ -125,28 +125,32 @@ fact {
 
 // We do not allow dead assignments (assignments that are not followed by a read of the variable).
 fact {
-  all a: AssignStatement | a.left.referredVar in p_statementsAfter[a].(containsExpr.*children.referredVar - left.referredVar)
+  all a: AssignStatement | a.left.referredVar in p_statementsAfter[a].(exprs.*children - left).referredVar
 }
 
 // Parameters should never be assigned to.
 fact {
-  all v: Variable | p_isParameter[v] implies not p_isAssigned[v]
+  all v: Variable | p_isParameter[v] implies (!p_isAssigned[v])
 }
 
 // Expressions form trees, and nodes of expression trees are never shared, i.e. every node has a unique parent.
 fact {
-  (parent = ~children) &&
-  (actuals = children) // children of CallExpr are actuals: link them to actual parent/child expressions
-}
+  (parent = ~children) && (all e: Expr | e != e.parent) && // parent/children relationship is not reflexive
+  (children = actuals) // children of CallExpr are actuals: link them to actual parent/child expressions
+} // TODO: not shared among different statements
 
+/*
 // The usual typing rules apply to assignments, function calls and return statements.
 fact {
-  (supertype = ~subtypes) &&
-  (all a: AssignStatement | p_subtypeOf[a.right.type, a.left.type]) &&
-  (all ce: CallExpr, a: ce.actuals | p_subtypeOf[a.type, a.usedAsActual.type]) &&
-  (all f1: Function | p_subtypeOf[f1.returnStmt.returnValue.type, f1.type])
+  (all ce: CallExpr, a: ce.actuals | p_subtypeOf[a.type, a.usedAsActual.type])
 }
 */
+fact {
+  (supertype = ~subtypes) && (all t: Type | t != t.supertype) && // supertye/subtypes relationship is not reflexive
+  (all a: AssignStatement | p_subtypeOf[a.right.type, a.left.type]) &&
+  (all f: Function | p_subtypeOf[f.returnStmt.returnValue.type, f.returnType])
+}
+
 /* --------------------------------------------------------------------------------
  * Functions
  * -------------------------------------------------------------------------------- */
@@ -168,7 +172,7 @@ fun p_literalTypes: set Type {
 
 // Returns all statements directly contained in the body of a function.
 fun p_statementsInFunction [f: Function]: set Statement {
-  f.firstStmt.*successor
+  f.statements
 }
 
 // Returns all statements contained after s in the same function.
@@ -192,7 +196,7 @@ fun p_subExprs [e: Expr]: set Expr {
 
 // true iff f contains a function call directly in its body.
 pred p_containsCall [f: Function] {
-  some CallExpr & p_statementsInFunction[f].containsExpr
+  some CallExpr & p_statementsInFunction[f].exprs
 }
 
 // true iff v appears on the left side of an assignment anywhere in the program.
@@ -202,7 +206,7 @@ pred p_isAssigned [v: Variable] {
 
 // true iff v appears in an expression anywhere in the program. Exclude writes.
 pred p_isRead [v: Variable] {
-  v in (VariableReference.referredVar - AssignStatement.left.referredVar)
+  v in (VariableReference - AssignStatement.left).referredVar
 }
 
 // true iff v is declared exactly once.
@@ -216,7 +220,7 @@ pred p_isParameter [v: Variable] {
   v in FormalParameter.declaredVar
 }
 
-// true iff t1 is a subtype of t2. Returns true if types are equal.
+// true iff t1 is a subtype of t2. Returns true if types are equal. TODO: do they want type equality to be included or not?
 pred p_subtypeOf [t1: Type, t2: Type] {
   t2 in t1.*supertype
 }
@@ -230,12 +234,17 @@ pred p_assignsTo [s: Statement, vd: VarDecl] {
  * Helper Functions
  * -------------------------------------------------------------------------------- */
 
-// Returns tuples of statements and their direct subexpressions.
-fun containsExpr: set Statement -> Expr {
-  left + right + returnType
-} // TODO: The Variable field in a VarDecl would also be an Expr?
+// Returns tuples of the form (caller, callee): (Function, Function), i.e. the function caller calls the function calle in its body.
+fun functions: set Function -> Function {
+  (statements.exprs.*children :> CallExpr).function
+}
 
-// Returns tuples of functions and the called functions.
-fun functionCalls: set Function -> Function {
-  (firstStmt.*successor.containsExpr.*children :> CallExpr).function
+// Returns tuples of functions and their statements.
+fun statements: set Function -> Statement {
+  firstStmt.*successor
+}
+
+// Returns tuples of statements and their direct subexpressions.
+fun exprs: set Statement -> Expr {
+  left + right + returnValue
 }
