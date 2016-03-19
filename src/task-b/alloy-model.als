@@ -20,8 +20,8 @@ abstract sig Statement {
 }
 
 sig AssignStatement extends Statement {
-  left: disj one VariableReference,
-  right: disj one Expr,
+  assignedTo: one Variable, // writes value "directly" to the variable
+  assignedValue: disj one Expr,
 }
 
 sig ReturnStatement extends Statement {
@@ -29,7 +29,7 @@ sig ReturnStatement extends Statement {
 }
 
 sig VarDecl extends Statement {
-  declaredVar: disj one Variable,
+  declaredVar: disj one Variable, // the variable can't be evalutated to a value yet and is therefore not seen as an expression
   type: one Type, // Declaration statements declare variables of a specific type.
 }
 
@@ -53,7 +53,7 @@ sig CallExpr extends Expr {
 sig Literal extends Expr {} // We do not model the value of literals.
 
 sig VariableReference extends Expr {
-  referredVar: one Variable,
+  referredVar: one Variable, // reads value from the variable
 }
 
 sig Type {
@@ -113,10 +113,19 @@ fact {
 }
 
 // TODO: Declaration statements must appear in the same function before the first use.
+fact {
+//  all vd: VarDecl | vd.declaredVar not in (VariableReference - p_statementsAfter[vd].exprs.*children).referredVar
+}
 
-// TODO: A variable that has been declared can be assigned to using an assignment statement.
+// A variable that has been declared can be assigned to using an assignment statement.
+fact {
+  all vd: VarDecl | all a: AssignStatement | p_assignsTo[a, vd] implies (a in p_statementsAfter[vd])
+}
 
 // TODO: Once the variable has been assigned to, it can be used in expressions in subsequent statements.
+fact {
+  // all a: AssignStatement | a.left.referredVar in Variable implies (in p_statementsAfter[a])
+}
 
 // We do not allow dead variables (variables that are never read).
 fact {
@@ -125,7 +134,7 @@ fact {
 
 // We do not allow dead assignments (assignments that are not followed by a read of the variable).
 fact {
-  all a: AssignStatement | a.left.referredVar in p_statementsAfter[a].(exprs.*children - left).referredVar
+  all a: AssignStatement | a.assignedTo in p_statementsAfter[a].exprs.*children.referredVar
 }
 
 // Parameters should never be assigned to.
@@ -147,7 +156,7 @@ fact {
 */
 fact {
   (supertype = ~subtypes) && (all t: Type | t != t.supertype) && // supertye/subtypes relationship is not reflexive
-  (all a: AssignStatement | p_subtypeOf[a.right.type, a.left.type]) &&
+  (all a: AssignStatement | all vd: VarDecl | p_assignsTo[a, vd] implies p_subtypeOf[a.assignedValue.type, vd.type]) &&
   (all f: Function | p_subtypeOf[f.returnStmt.returnValue.type, f.returnType])
 }
 
@@ -201,12 +210,12 @@ pred p_containsCall [f: Function] {
 
 // true iff v appears on the left side of an assignment anywhere in the program.
 pred p_isAssigned [v: Variable] {
-  v in AssignStatement.left.referredVar
+  v in AssignStatement.assignedTo
 }
 
 // true iff v appears in an expression anywhere in the program. Exclude writes.
 pred p_isRead [v: Variable] {
-  v in (VariableReference - AssignStatement.left).referredVar
+  v in VariableReference.referredVar
 }
 
 // true iff v is declared exactly once.
@@ -227,7 +236,7 @@ pred p_subtypeOf [t1: Type, t2: Type] {
 
 // true iff s assigns to the variable declared by vd.
 pred p_assignsTo [s: Statement, vd: VarDecl] {
-  s.left.referredVar = vd.declaredVar
+  s.assignedTo = vd.declaredVar
 }
 
 /* --------------------------------------------------------------------------------
@@ -246,5 +255,5 @@ fun statements: set Function -> Statement {
 
 // Returns tuples of statements and their direct subexpressions.
 fun exprs: set Statement -> Expr {
-  left + right + returnValue
+  assignedValue + returnValue
 }
