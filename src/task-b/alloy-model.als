@@ -1,6 +1,37 @@
+// ---------- Instances for task C --------------------------------------------------- //
+
+pred inst1 {}
+run inst1 for 5 but exactly 2 CallExpr, 1 Function
+
+pred inst2 {}
+run inst2 for 5 but exactly 2 CallExpr, 2 Function
+
+pred inst3 {
+  one AssignStatement
+  one Literal
+  one Variable
+}
+run inst3
+
+pred inst4 {
+  some a: AssignStatement, ce: a.assignedValue {
+    ce in CallExpr
+    all vd: VarDecl | p_assignsTo[a, vd] implies disj[ce.function.returnStmt.returnValue.type, ce.function.returnType, vd.type]
+  }
+}
+run inst4 for 5 but exactly 1 CallExpr
+
+pred inst5 {
+  one Literal
+  all disj t1, t2: Type | t1 != t2.supertype
+}
+run inst5 for 5 but exactly 2 Type
+
+// ---------- Static Model of task B -------------------------------------------------- //
+
 pred show {
   (some f: Function | f not in MainFunction) &&
-  (some f: Function | f.firstStmt != f.returnStmt)
+  (some AssignStatement)
 }
 run show
 
@@ -127,7 +158,7 @@ fact {
 
 // Once the variable has been assigned to, it can be used in expressions in subsequent statements.
 fact {
-  all a: AssignStatement | a.assignedTo not in (VariableReference - p_statementsAfter[a].subExprs).referredVar
+  no a: AssignStatement | a.assignedTo in (VariableReference - p_statementsAfter[a].subExprs).referredVar
 }
 
 // We do not allow dead variables (variables that are never read).
