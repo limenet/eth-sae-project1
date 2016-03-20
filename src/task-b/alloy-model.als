@@ -30,10 +30,10 @@ run inst5 for 5 but exactly 2 Type
 // ---------- Static Model of task B -------------------------------------------------- //
 
 pred show {
-  (some f: Function | f not in MainFunction)
-  (#FormalParameter = 3)
+//  (some f: Function | f not in MainFunction)
+//  (#FormalParameter = 3)
 }
-run show for 10
+run show for 8
 
 /* --------------------------------------------------------------------------------
  * Signatures
@@ -80,7 +80,7 @@ abstract sig Expr {
 
 sig CallExpr extends Expr {
   function: one Function, // A function can be called in a corresponding call expression.
-  actuals: Expr lone -> lone FormalParameter, // A call expression is assiociated with a set of expressions that serve as actual parameters and are mapped to formal parameters.
+// TODO:  actuals: Expr lone -> lone FormalParameter, // A call expression is assiociated with a set of expressions that serve as actual parameters and are mapped to formal parameters.
 } // TODO: multiplicities?
 
 sig Literal extends Expr {} // We do not model the value of literals.
@@ -101,12 +101,12 @@ sig Variable {}
  * -------------------------------------------------------------------------------- */
 
 fact {
-  (all disj f1, f2: Function | disj[f1.statements.exprs.*children.referredVar, f2.statements.exprs.*children.referredVar]) // TODO: all variables are local to a function
+// TODO:  (all disj f1, f2: Function | disj[f1.statements.exprs.reads, f2.statements.exprs.reads]) // TODO: all variables are local to a function
 }
 
 // Functions consist of a linear sequence of statements.
 fact {
-  (predecessor = ~successor) && (all s: Statement | s != s.predecessor) && // predecessor/successor relationship is not reflexive
+  (predecessor = ~successor) && // HOLDS ALREADY: (no s: Statement | s in s.^successor)
   (no firstStmt.predecessor) && // the first statement has no predecessor
   (all f: Function | f.returnStmt in p_statementsInFunction[f]) &&
   (Function.statements = Statement) // all statements belong to a function
@@ -119,14 +119,14 @@ fact {
 
 // Actual parameters are mapped to formal parameters.
 fact {
-  (all ce: CallExpr | ce.actuals[Expr] = ce.function.formals) // sets are equal and thus the number of arguments match
+// TODO:  (all ce: CallExpr | ce.actuals[Expr] = ce.function.formals) // sets are equal and thus the number of arguments match
 }
 
 // TODO: A return statement terminates the execution of the function body. Not a static constraint.
 
 // A function may not contain unreachable statements. i.e. the return statement has no successor statement.
 fact {
-  all rs: ReturnStatement | no p_statementsAfter[rs]
+  no ReturnStatement.successor
 }
 
 // Recursion is not allowed.
@@ -149,21 +149,17 @@ fact {
   all v: Variable | p_isDeclared[v]
 }
 
-// TODO: Declaration statements must appear in the same function before the first use.
-fact {
-//  all vd: VarDecl | vd.declaredVar not in (VariableReference - p_statementsAfter[vd].subExprs).referredVar
-}
+// HOLDS ALREADY: Declaration statements must appear in the same function before the first use.
+// all s: Statement | all v: (s.exprs.reads + s.assignedTo) | !p_isParameter[v] implies some vd: VarDecl | (v = vd.declaredVar && s in p_statementsAfter[vd])
 
 // A variable that has been declared can be assigned to using an assignment statement.
 fact {
   all vd: VarDecl | all a: AssignStatement | p_assignsTo[a, vd] implies (a in p_statementsAfter[vd])
 }
 
-// Once the variable has been assigned to, it can be used in expressions in subsequent statements. TODO
+// Once the variable has been assigned to, it can be used in expressions in subsequent statements.
 fact {
-  //all s: Statement | all v: s.exprs.*children.referredVar | some a: AssignStatement | (v = a.assignedTo) && (s in p_statementsAfter[a])
-  //all a: AssignStatement | all s: Statement | (s.exprs.*children.referredVar = a.assignedTo) implies (s in p_statementsAfter[a])
-  //no a: AssignStatement | a.assignedTo in (VariableReference - p_statementsAfter[a].exprs.*children).referredVar
+  all s: Statement | all v: s.exprs.reads | !p_isParameter[v] implies some a: AssignStatement | (v = a.assignedTo) && (s in p_statementsAfter[a])
 }
 
 // We do not allow dead variables (variables that are never read).
@@ -173,7 +169,7 @@ fact {
 
 // We do not allow dead assignments (assignments that are not followed by a read of the variable).
 fact {
-  all a: AssignStatement | a.assignedTo in p_statementsAfter[a].exprs.*children.referredVar
+  all a: AssignStatement | a.assignedTo in p_statementsAfter[a].exprs.reads
 }
 
 // Parameters should never be assigned to.
@@ -185,22 +181,22 @@ fact {
 fact {
   (parent = ~children) && (no e: Expr | e in e.^children) && // parent/children relationship has no cycles
   ((Statement.exprs + Expr.children) = Expr) && // all expressions have a parent
-  (no (Statement.exprs & Expr.children)) && (no (Statement.assignedValue & Statement.returnValue)) &&
-  (children = {c: CallExpr, e: Expr | c->e->FormalParameter in actuals}) // children of CallExpr are actuals: link them to actual parent/child expressions
+  (no (Statement.exprs & Expr.children)) && (no (Statement.assignedValue & Statement.returnValue)) // parents are unique
+// TODO:  (children = {c: CallExpr, e: Expr | c->e->FormalParameter in actuals}) // children of CallExpr are actuals: link them to actual parent/child expressions
 }
 
-// The usual typing rules apply to assignments, function calls and return statements. TODO
+// The usual typing rules apply to assignments, function calls and return statements.
 fact {
   (supertype = ~subtypes) && (no t: Type | t in t.^subtypes) && // supertye/subtypes relationship has no cycles
   (all a: AssignStatement | all vd: VarDecl | p_assignsTo[a, vd] implies p_subtypeOf[a.assignedValue.type, vd.type]) &&
-  (all ce: CallExpr, e: Expr, fp: FormalParameter | (ce->e->fp in actuals) implies p_subtypeOf[e.type, fp.type]) && // TODO
+// TODO:  (all ce: CallExpr, e: Expr, fp: FormalParameter | (ce->e->fp in actuals) implies p_subtypeOf[e.type, fp.type]) &&
   (all f: Function | p_subtypeOf[f.returnStmt.returnValue.type, f.returnType])
 }
 
 // TODO: How do they want the types of references to variables and the types of variable declarations to be related?
 fact {
-  (all vr: VariableReference | all vd: VarDecl | (vr.referredVar = vd.declaredVar) implies vr.type = vd.type) &&
-  (all vr: VariableReference | all fp: FormalParameter | (vr.referredVar = fp.declaredVar) implies vr.type = fp.type)
+//  (all vr: VariableReference | all vd: VarDecl | (vr.referredVar = vd.declaredVar) implies vr.type = vd.type) &&
+//  (all vr: VariableReference | all fp: FormalParameter | (vr.referredVar = fp.declaredVar) implies vr.type = fp.type)
 }
 
 /* --------------------------------------------------------------------------------
@@ -299,4 +295,9 @@ fun statements: set Function -> Statement {
 // Returns tuples of statements and their direct subexpressions.
 fun exprs: set Statement -> Expr {
   assignedValue + returnValue
+}
+
+// Returns tuples of expressions and the variables they read.
+fun reads: set Expr -> Variable {
+  *children.referredVar
 }
