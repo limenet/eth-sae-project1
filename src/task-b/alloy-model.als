@@ -80,8 +80,8 @@ abstract sig Expr {
 
 sig CallExpr extends Expr {
   function: one Function, // A function can be called in a corresponding call expression.
-// TODO:  actuals: Expr lone -> lone FormalParameter, // A call expression is assiociated with a set of expressions that serve as actual parameters and are mapped to formal parameters.
-} // TODO: multiplicities?
+  actuals: Expr lone -> lone FormalParameter, // A call expression is assiociated with a set of expressions that serve as actual parameters and are mapped to formal parameters.
+} // TODO: what do multiplicities in such ternary relations really represent?
 
 sig Literal extends Expr {} // We do not model the value of literals.
 
@@ -119,10 +119,10 @@ fact {
 
 // Actual parameters are mapped to formal parameters.
 fact {
-// TODO:  (all ce: CallExpr | ce.actuals[Expr] = ce.function.formals) // sets are equal and thus the number of arguments match
+  all ce: CallExpr | ce.actuals[Expr] = ce.function.formals
 }
 
-// TODO: A return statement terminates the execution of the function body. Not a static constraint.
+// NOT ENCODABLE: A return statement terminates the execution of the function body. Not a static constraint.
 
 // A function may not contain unreachable statements. i.e. the return statement has no successor statement.
 fact {
@@ -181,15 +181,15 @@ fact {
 fact {
   (parent = ~children) && (no e: Expr | e in e.^children) && // parent/children relationship has no cycles
   ((Statement.exprs + Expr.children) = Expr) && // all expressions have a parent
-  (no (Statement.exprs & Expr.children)) && (no (Statement.assignedValue & Statement.returnValue)) // parents are unique
-// TODO:  (children = {c: CallExpr, e: Expr | c->e->FormalParameter in actuals}) // children of CallExpr are actuals: link them to actual parent/child expressions
+  (no (Statement.exprs & Expr.children)) && (no (Statement.assignedValue & Statement.returnValue)) && // parents are unique
+  (children = actuals.FormalParameter)
 }
 
 // The usual typing rules apply to assignments, function calls and return statements.
 fact {
   (supertype = ~subtypes) && (no t: Type | t in t.^subtypes) && // supertye/subtypes relationship has no cycles
   (all a: AssignStatement | all vd: VarDecl | p_assignsTo[a, vd] implies p_subtypeOf[a.assignedValue.type, vd.type]) &&
-// TODO:  (all ce: CallExpr, e: Expr, fp: FormalParameter | (ce->e->fp in actuals) implies p_subtypeOf[e.type, fp.type]) &&
+  (all e: Expr, fp: FormalParameter | (e->fp in CallExpr.actuals) implies p_subtypeOf[e.type, fp.type]) &&
   (all f: Function | p_subtypeOf[f.returnStmt.returnValue.type, f.returnType])
 }
 
