@@ -35,6 +35,8 @@ pred show {
 }
 run show for 8
 
+// NOT ENCODABLE: A return statement terminates the execution of the function body. Not a static constraint.
+
 /* --------------------------------------------------------------------------------
  * Signatures
  * -------------------------------------------------------------------------------- */
@@ -81,7 +83,7 @@ abstract sig Expr {
 sig CallExpr extends Expr {
   function: one Function, // A function can be called in a corresponding call expression.
   actuals: Expr lone -> lone FormalParameter, // A call expression is assiociated with a set of expressions that serve as actual parameters and are mapped to formal parameters.
-} // TODO: what do multiplicities in such ternary relations really represent?
+}
 
 sig Literal extends Expr {} // We do not model the value of literals.
 
@@ -100,16 +102,20 @@ sig Variable {}
  * Facts
  * -------------------------------------------------------------------------------- */
 
-fact {
-// TODO:  (all disj f1, f2: Function | disj[f1.statements.exprs.reads, f2.statements.exprs.reads]) // TODO: all variables are local to a function
-}
-
 // Functions consist of a linear sequence of statements.
 fact {
-  (predecessor = ~successor) && // HOLDS ALREADY: (no s: Statement | s in s.^successor)
+  (predecessor = ~successor) &&
+  (Function.statements = Statement) && // all statements belong to a function
   (no firstStmt.predecessor) && // the first statement has no predecessor
   (all f: Function | f.returnStmt in p_statementsInFunction[f]) &&
-  (Function.statements = Statement) // all statements belong to a function
+  (no ReturnStatement.successor) // A function may not contain unreachable statements. i.e. the return statement has no successor statement.
+}
+
+// Expressions are typically associated with a type.
+fact {
+  (all ce: CallExpr | ce.type = ce.function.returnType) && // The type of a call expression is equal to the return type of the function.
+  (all vr: VariableReference | all vd: VarDecl | (vr.referredVar = vd.declaredVar) implies vr.type = vd.type) &&
+  (all vr: VariableReference | all fp: FormalParameter | (vr.referredVar = fp.declaredVar) implies vr.type = fp.type)
 }
 
 // Functions have a set of formal parameters.
@@ -120,13 +126,6 @@ fact {
 // Actual parameters are mapped to formal parameters.
 fact {
   all ce: CallExpr | ce.actuals[Expr] = ce.function.formals
-}
-
-// NOT ENCODABLE: A return statement terminates the execution of the function body. Not a static constraint.
-
-// A function may not contain unreachable statements. i.e. the return statement has no successor statement.
-fact {
-  no ReturnStatement.successor
 }
 
 // Recursion is not allowed.
@@ -148,9 +147,6 @@ fact {
 fact {
   all v: Variable | p_isDeclared[v]
 }
-
-// HOLDS ALREADY: Declaration statements must appear in the same function before the first use.
-// all s: Statement | all v: (s.exprs.reads + s.assignedTo) | !p_isParameter[v] implies some vd: VarDecl | (v = vd.declaredVar && s in p_statementsAfter[vd])
 
 // A variable that has been declared can be assigned to using an assignment statement.
 fact {
@@ -177,6 +173,11 @@ fact {
   all v: Variable | p_isParameter[v] implies (!p_isAssigned[v])
 }
 
+// Variables (declared either by a VarDecl or as FormalParameter) are local to a function
+fact {
+  all disj f1, f2: Function | disj[f1.statements.exprs.reads, f2.(statements.exprs.reads + formals.declaredVar)]
+}
+
 // Expressions form trees, and nodes of expression trees are never shared, i.e. every node has a unique parent.
 fact {
   (parent = ~children) && (no e: Expr | e in e.^children) && // parent/children relationship has no cycles
@@ -188,22 +189,17 @@ fact {
 // The usual typing rules apply to assignments, function calls and return statements.
 fact {
   (supertype = ~subtypes) && (no t: Type | t in t.^subtypes) && // supertye/subtypes relationship has no cycles
+  ((Function.returnType + VarDecl.type + FormalParameter.type + p_expressionTypes) = Type) && // all types are used
   (all a: AssignStatement | all vd: VarDecl | p_assignsTo[a, vd] implies p_subtypeOf[a.assignedValue.type, vd.type]) &&
   (all e: Expr, fp: FormalParameter | (e->fp in CallExpr.actuals) implies p_subtypeOf[e.type, fp.type]) &&
   (all f: Function | p_subtypeOf[f.returnStmt.returnValue.type, f.returnType])
-}
-
-// TODO: How do they want the types of references to variables and the types of variable declarations to be related?
-fact {
-//  (all vr: VariableReference | all vd: VarDecl | (vr.referredVar = vd.declaredVar) implies vr.type = vd.type) &&
-//  (all vr: VariableReference | all fp: FormalParameter | (vr.referredVar = fp.declaredVar) implies vr.type = fp.type)
 }
 
 /* --------------------------------------------------------------------------------
  * Functions
  * -------------------------------------------------------------------------------- */
 
-// Returns the number of function calls in the program. TODO: do they want the number of call expressions or the number of function calls during the execution (static or dynamic)?
+// Returns the number of function calls (call expressions) in the program.
 fun p_numFunctionCalls: Int {
   #CallExpr
 }
@@ -268,7 +264,7 @@ pred p_isParameter [v: Variable] {
   v in FormalParameter.declaredVar
 }
 
-// true iff t1 is a subtype of t2. Returns true if types are equal. TODO: do they want type equality to be included or not?
+// true iff t1 is a subtype of t2. Returns true if types are equal.
 pred p_subtypeOf [t1: Type, t2: Type] {
   t2 in t1.*supertype
 }
