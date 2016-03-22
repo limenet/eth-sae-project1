@@ -165,7 +165,8 @@ fact {
 
 // We do not allow dead assignments (assignments that are not followed by a read of the variable).
 fact {
-  all a: AssignStatement | a.assignedTo in p_statementsAfter[a].exprs.reads
+//  all a: AssignStatement | a.assignedTo in p_statementsAfter[a].exprs.reads // assignment is followed by any read of the variable, not necessary the assigned value
+  all a: AssignStatement, v: a.assignedTo | some s: p_statementsAfter[a] | v in s.exprs.reads && (no s': (p_statementsAfter[a] - p_statementsAfter[s]) | v= s'.assignedTo)
 }
 
 // Parameters should never be assigned to.
