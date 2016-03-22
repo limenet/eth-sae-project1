@@ -75,7 +75,30 @@ sig NotExpr extends Expr {
 sig Variable {}
 
 /* --------------------------------------------------------------------------------
- * Facts
+ * Functions (Dynamic Model)
+ * -------------------------------------------------------------------------------- */
+
+/*
+// Returns the value of p in execution e.
+fun p_val [e: Execution, p: Expr]: Value {}
+
+// Returns the return value of f in e.
+fun p_retval [e: Execution, f: Function]: Value {}
+
+// Returns the value of formal parameter p in execution e.
+fun p_argval [e: Execution, f: Function, p: FormalParameter]: Value {}
+*/
+// Returns the number of Not-expressions.
+fun p_numNot: Int {
+  #NotExpr
+}
+/*
+// Returns the value of variable v before executing statement s in execution e.
+fun p_valbefore [e: Execution, s: Statement, v: Variable]: Value {}
+*/
+
+/* --------------------------------------------------------------------------------
+ * Facts (Static Model)
  * -------------------------------------------------------------------------------- */
 
 // Functions consist of a linear sequence of statements.
@@ -153,7 +176,7 @@ fact {
 }
 
 /* --------------------------------------------------------------------------------
- * Functions
+ * Functions (Static Model)
  * -------------------------------------------------------------------------------- */
 
 // Returns the number of function calls (call expressions) in the program.
@@ -182,7 +205,7 @@ fun p_subExprs [e: Expr]: set Expr {
 }
 
 /* --------------------------------------------------------------------------------
- * Predicates
+ * Predicates (Static Model)
  * -------------------------------------------------------------------------------- */
 
 // true iff f contains a function call directly in its body.
@@ -217,7 +240,7 @@ pred p_assignsTo [s: Statement, vd: VarDecl] {
 }
 
 /* --------------------------------------------------------------------------------
- * Additional Relations
+ * Additional Relations (Static Model)
  * -------------------------------------------------------------------------------- */
 
 // Returns tuples of the form (caller, callee): (Function, Function), i.e. the function 'caller' calls the function 'calle' in its body.
