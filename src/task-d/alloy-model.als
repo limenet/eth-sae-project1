@@ -19,10 +19,9 @@ abstract sig Value {}
 one sig True, False, Undefined extends Value {}
 
 sig Function {
-  returnType: one Type, // Functions have a return type.
   firstStmt: disj one Statement,
   returnStmt: disj one ReturnStatement, // Each function execution must be terminated by a return statement.
-  formals: disj set FormalParameter, // Functions have a set (may be zero) of formal parameters with types.
+  formals: disj set FormalParameter, // Functions have a set (may be zero) of formal parameters.
 }
 
 one sig MainFunction extends Function {}
@@ -43,18 +42,15 @@ sig ReturnStatement extends Statement {
 
 sig VarDecl extends Statement {
   declaredVar: disj one Variable, // the variable can't be evalutated to a value yet and is therefore not seen as an expression
-  type: one Type, // Declaration statements declare variables of a specific type.
 }
 
 sig FormalParameter {
   declaredVar: disj one Variable,
-  type: one Type,
 }
 
 abstract sig Expr {
   parent: lone Expr,
   children: disj set Expr, // may have zero direct children
-  type: one Type, // Expressions are typically associated with a type.
 }
 
 sig CallExpr extends Expr {
@@ -79,11 +75,6 @@ sig NotExpr extends Expr {
   child: one Expr,
 }
 
-sig Type {
-  supertype: lone Type, // Each type can have up to one supertype.
-  subtypes: disj set Type,
-}
-
 sig Variable {}
 
 /* --------------------------------------------------------------------------------
@@ -97,13 +88,6 @@ fact {
   (no firstStmt.predecessor) && // the first statement has no predecessor
   (all f: Function | f.returnStmt in p_statementsInFunction[f]) &&
   (no ReturnStatement.successor) // A function may not contain unreachable statements. i.e. the return statement has no successor statement.
-}
-
-// Expressions are typically associated with a type.
-fact {
-  (all ce: CallExpr | ce.type = ce.function.returnType) && // The type of a call expression is equal to the return type of the function.
-  (all vr: VariableReference | all vd: VarDecl | (vr.referredVar = vd.declaredVar) implies vr.type = vd.type) &&
-  (all vr: VariableReference | all fp: FormalParameter | (vr.referredVar = fp.declaredVar) implies vr.type = fp.type)
 }
 
 // Functions have a set of formal parameters.
@@ -170,15 +154,6 @@ fact {
   (children = actuals.FormalParameter + leftChild + rightChild + child)
 }
 
-// The usual typing rules apply to assignments, function calls and return statements.
-fact {
-  (supertype = ~subtypes) && (no t: Type | t in t.^subtypes) && // supertye/subtypes relationship has no cycles
-  ((Function.returnType + VarDecl.type + FormalParameter.type + p_expressionTypes) = Type) && // all types are used
-  (all a: AssignStatement | all vd: VarDecl | p_assignsTo[a, vd] implies p_subtypeOf[a.assignedValue.type, vd.type]) &&
-  (all e: Expr, fp: FormalParameter | (e->fp in CallExpr.actuals) implies p_subtypeOf[e.type, fp.type]) &&
-  (all f: Function | p_subtypeOf[f.returnStmt.returnValue.type, f.returnType])
-}
-
 /* --------------------------------------------------------------------------------
  * Functions
  * -------------------------------------------------------------------------------- */
@@ -186,16 +161,6 @@ fact {
 // Returns the number of function calls (call expressions) in the program.
 fun p_numFunctionCalls: Int {
   #CallExpr
-}
-
-// Returns the types of all expressions.
-fun p_expressionTypes: set Type {
-  Expr.type
-}
-
-// Returns the types of all literals.
-fun p_literalTypes: set Type {
-  Literal.type
 }
 
 // Returns all statements directly contained in the body of a function.
@@ -246,11 +211,6 @@ pred p_isDeclared [v: Variable] {
 // true iff v is declared as a parameter.
 pred p_isParameter [v: Variable] {
   v in FormalParameter.declaredVar
-}
-
-// true iff t1 is a subtype of t2. Returns true if types are equal.
-pred p_subtypeOf [t1: Type, t2: Type] {
-  t2 in t1.*supertype
 }
 
 // true iff s assigns to the variable declared by vd.
