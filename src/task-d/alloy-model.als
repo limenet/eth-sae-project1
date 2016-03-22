@@ -2,11 +2,8 @@
 
 // ---------- Dynamic Model of task D -------------------------------------------------- //
 
-pred show {
-//  (some f: Function | f not in MainFunction)
-//  (#FormalParameter = 3)
-}
-run show for 8
+pred show {}
+run show for 5
 
 /* --------------------------------------------------------------------------------
  * Signatures
@@ -151,7 +148,8 @@ fact {
   (parent = ~children) && (no e: Expr | e in e.^children) && // parent/children relationship has no cycles
   ((Statement.exprs + Expr.children) = Expr) && // all expressions have a parent
   (no (Statement.exprs & Expr.children)) && (no (Statement.assignedValue & Statement.returnValue)) && // parents are unique
-  (children = actuals.FormalParameter + leftChild + rightChild + child)
+  (children = actuals.FormalParameter + leftChild + rightChild + child) &&
+  (all ae: AndExpr | ae.leftChild != ae.rightChild)
 }
 
 /* --------------------------------------------------------------------------------
