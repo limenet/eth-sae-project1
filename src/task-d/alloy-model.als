@@ -1,6 +1,6 @@
 // ---------- Instances for task E --------------------------------------------------- //
 
-// ---------- Dynamic Model of task D -------------------------------------------------- //
+// ---------- Dynamic Model of task D ---------------------------------------------- //
 
 pred show {}
 run show for 5
@@ -9,7 +9,10 @@ run show for 5
  * Signatures
  * -------------------------------------------------------------------------------- */
 
-sig Execution {}
+sig Execution {
+//  variableValue: Variable -> Value, // TODO: An execution reflects the value of each variable at each point in the program.
+//  exprValue: Expr -> Value, // TODO: An execution uniquely relates every expression in the program to a value from the set True, False, Undefined.
+}
 
 abstract sig Value {}
 
@@ -75,27 +78,39 @@ sig NotExpr extends Expr {
 sig Variable {}
 
 /* --------------------------------------------------------------------------------
+ * Facts/Traces (Dynamic Model)
+ * -------------------------------------------------------------------------------- */
+
+// TODO
+
+/* --------------------------------------------------------------------------------
  * Functions (Dynamic Model)
  * -------------------------------------------------------------------------------- */
 
-/*
 // Returns the value of p in execution e.
-fun p_val [e: Execution, p: Expr]: Value {}
+fun p_val [e: Execution, p: Expr]: Value {
+  True // TODO
+}
 
 // Returns the return value of f in e.
-fun p_retval [e: Execution, f: Function]: Value {}
+fun p_retval [e: Execution, f: Function]: Value {
+  True // TODO
+}
 
 // Returns the value of formal parameter p in execution e.
-fun p_argval [e: Execution, f: Function, p: FormalParameter]: Value {}
-*/
+fun p_argval [e: Execution, f: Function, p: FormalParameter]: Value {
+  True // TODO
+}
+
 // Returns the number of Not-expressions.
 fun p_numNot: Int {
   #NotExpr
 }
-/*
+
 // Returns the value of variable v before executing statement s in execution e.
-fun p_valbefore [e: Execution, s: Statement, v: Variable]: Value {}
-*/
+fun p_valbefore [e: Execution, s: Statement, v: Variable]: Value {
+  True // TODO
+}
 
 /* --------------------------------------------------------------------------------
  * Facts (Static Model)
