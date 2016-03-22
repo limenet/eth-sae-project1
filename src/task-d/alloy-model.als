@@ -1,33 +1,6 @@
-// ---------- Instances for task C --------------------------------------------------- //
+// ---------- Instances for task E --------------------------------------------------- //
 
-pred inst1 {} // NOT feasible
-run inst1 for 5 but exactly 2 CallExpr, 1 Function
-
-pred inst2 {}
-run inst2 for 5 but exactly 2 CallExpr, 2 Function
-
-pred inst3 {
-  one AssignStatement
-  one Literal
-  one Variable
-}
-run inst3
-
-pred inst4 {
-  some a: AssignStatement, ce: a.assignedValue {
-    ce in CallExpr
-    all vd: VarDecl | p_assignsTo[a, vd] implies disj[ce.function.returnStmt.returnValue.type, ce.function.returnType, vd.type]
-  }
-}
-run inst4 for 5 but exactly 1 CallExpr
-
-pred inst5 {
-  one Literal
-  all disj t1, t2: Type | t1 != t2.supertype
-}
-run inst5 for 5 but exactly 2 Type
-
-// ---------- Static Model of task B -------------------------------------------------- //
+// ---------- Dynamic Model of task D -------------------------------------------------- //
 
 pred show {
 //  (some f: Function | f not in MainFunction)
@@ -35,11 +8,15 @@ pred show {
 }
 run show for 8
 
-// NOT ENCODABLE: A return statement terminates the execution of the function body. Not a static constraint.
-
 /* --------------------------------------------------------------------------------
  * Signatures
  * -------------------------------------------------------------------------------- */
+
+sig Execution {}
+
+abstract sig Value {}
+
+one sig True, False, Undefined extends Value {}
 
 sig Function {
   returnType: one Type, // Functions have a return type.
@@ -81,14 +58,25 @@ abstract sig Expr {
 }
 
 sig CallExpr extends Expr {
-  function: one Function, // A function can be called in a corresponding call expression.
+  function: disj one Function, // A function can be called in a corresponding call expression. Every function is called at most once.
   actuals: Expr lone -> lone FormalParameter, // A call expression is assiociated with a set of expressions that serve as actual parameters and are mapped to formal parameters.
 }
 
-sig Literal extends Expr {} // We do not model the value of literals.
+sig Literal extends Expr {
+  value: one (True + False) // Every literal is associated with a fixed value - either True or False.
+}
 
 sig VariableReference extends Expr {
   referredVar: one Variable, // reads value from the variable
+}
+
+sig AndExpr extends Expr {
+  leftChild: one Expr,
+  rightChild: one Expr,
+}
+
+sig NotExpr extends Expr {
+  child: one Expr,
 }
 
 sig Type {
@@ -131,11 +119,6 @@ fact {
 // Recursion is not allowed.
 fact {
   no f: Function | f in f.^functions
-}
-
-// There is one main function that takes no parameters.
-fact {
-  no MainFunction.formals
 }
 
 // There is one main function from which all other functions are transitively called.
@@ -184,7 +167,7 @@ fact {
   (parent = ~children) && (no e: Expr | e in e.^children) && // parent/children relationship has no cycles
   ((Statement.exprs + Expr.children) = Expr) && // all expressions have a parent
   (no (Statement.exprs & Expr.children)) && (no (Statement.assignedValue & Statement.returnValue)) && // parents are unique
-  (children = actuals.FormalParameter)
+  (children = actuals.FormalParameter + leftChild + rightChild + child)
 }
 
 // The usual typing rules apply to assignments, function calls and return statements.
