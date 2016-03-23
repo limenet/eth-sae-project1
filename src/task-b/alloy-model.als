@@ -1,6 +1,6 @@
 // ---------- Instances for task C --------------------------------------------------- //
 
-pred inst1 {} // NOT feasible
+pred inst1 {} // NOT feasible, no recursions allowed
 run inst1 for 5 but exactly 2 CallExpr, 1 Function
 
 pred inst2 {}
