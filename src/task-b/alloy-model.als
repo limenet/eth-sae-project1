@@ -35,8 +35,6 @@ pred show {
 }
 run show for 8
 
-// NOT ENCODABLE: A return statement terminates the execution of the function body. Not a static constraint.
-
 /* --------------------------------------------------------------------------------
  * Signatures
  * -------------------------------------------------------------------------------- */
