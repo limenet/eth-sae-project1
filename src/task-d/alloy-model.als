@@ -1,11 +1,14 @@
-//TODO
-// Simplify the model to BOOLEANLINEAR - done
-// Add the model of executions - implementation pending
-// signature Execution - implementation pending
-// signature Value - done
-// functions - implementation pending
+/* TODO
+ Simplify the model to BOOLEANLINEAR - done
+ Add the model of executions - implementation pending
+ signature Execution - implementation pending
+ signature Value - done
+ functions - implementation pending
+ check multiplicities
+ use functions
+*/
 
-open util/ordering[Execution]
+open util/ordering[Step]
 
 // ---------- Instances for task E --------------------------------------------------- //
 
@@ -19,8 +22,17 @@ run show for 5
  * -------------------------------------------------------------------------------- */
 
 sig Execution {
-//  variableValue: Variable -> Value, // TODO: An execution reflects the value of each variable at each point in the program.
-//  exprValue: Expr -> Value, // TODO: An execution uniquely relates every expression in the program to a value from the set True, False, Undefined.
+  steps: set Step,
+  inputs: Value lone -> lone FormalParameter,
+}
+
+fact {
+  all e: Execution | e.inputs[Value] = MainFunction.formals
+}
+
+sig Step {
+  varValue: Variable -> Value, // An execution reflects the value of each variable at each point in the program.
+  exprValue: Expr -> Value, // An execution uniquely relates every expression in the program to a value from the set True, False, Undefined.
 }
 
 abstract sig Value {}
@@ -92,7 +104,68 @@ sig Variable {}
  * Facts/Traces (Dynamic Model)
  * -------------------------------------------------------------------------------- */
 
-// TODO
+pred init [s: Step] {
+  no s.varValue &&
+  all e: Expr | s.exprValue[e] = Undefined
+}
+
+pred t_assignStmt [s, s': Step, a: AssignStatement] {
+  s.exprValue[a.assignedValue] != Undefined &&
+  s'.exprValue = s.exprValue &&
+  s'.varValue = s.varValue ++ a.assignedTo -> s.exprValue[a.assignedValue]
+}
+
+pred t_varDecl [s, s': Step, vd: VarDecl] {
+  no s.varValue[vd.declaredVar] &&
+  s'.exprValue = s.exprValue &&
+  s'.varValue = s.varValue ++ vd.declaredVar -> Undefined
+}
+
+pred t_returnStmt [s, s': Step, rs: ReturnStatement] {
+  s.exprValue[rs.returnValue] != Undefined &&
+  s'.exprValue = s.exprValue ++ function.returnStmt.rs -> s.exprValue[rs.returnValue] &&
+  s'.varValue = s.varValue
+  // TODO
+}
+
+pred t_callExpr [s, s': Step, ce: CallExpr] {
+  all e: ce.actuals.FormalParameter | s.exprValue[e] != Undefined &&
+  s'.exprValue = s.exprValue &&
+  all v: Variable, a: ce.actuals | (v in a[Expr].declaredVar) implies (s'.varValue[v] = s.exprValue[a.FormalParameter]) else (s'.varValue = s.varValue)
+  // calc actuals
+  // hand over to formals
+  // precond: all actuals/kids are already done
+  // precond no change in exprValue
+  // on return: expr evalutated + changes exprValue
+  // TODO
+}
+
+pred t_andExpr [s, s': Step, ae: AndExpr] {
+  s.exprValue[ae.leftChild] != Undefined &&
+  s.exprValue[ae.rightChild] != Undefined &&
+  (s.exprValue[ae.leftChild] = True && s.exprValue[ae.rightChild] = True) implies (s'.exprValue = s.exprValue ++ ae -> True) else (s'.exprValue = s.exprValue ++ ae -> False) &&
+  s'.varValue = s.varValue
+}
+
+pred t_notExpr [s, s': Step, ne: NotExpr] {
+  s.exprValue[ne.child] != Undefined &&
+  (s.exprValue[ne.child] = True) implies (s'.exprValue = s.exprValue ++ ne -> False) else (s'.exprValue = s.exprValue ++ ne -> True) &&
+  s'.varValue = s.varValue
+}
+
+pred t_varRef [s, s': Step, vr: VariableReference] {
+  s'.exprValue = s.exprValue ++ vr -> s.varValue[vr.referredVar] &&
+  s'.varValue = s.varValue
+}
+
+pred t_literal [s, s': Step, l: Literal] {
+  s'.exprValue = s.exprValue ++ l -> l.value &&
+  s'.varValue = s.varValue
+}
+
+fact traces {
+  init[first] // TODO
+}
 
 /* --------------------------------------------------------------------------------
  * Functions (Dynamic Model)
