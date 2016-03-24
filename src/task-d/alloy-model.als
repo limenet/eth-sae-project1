@@ -74,13 +74,13 @@ sig VariableReference extends Expr {
   referredVar: one Variable, // reads value from the variable
 }
 
-//Extend your model by expressions that model the binary operations And
-and the unary operation Not
+// Extend your model by expressions that model the binary operations And.
 sig AndExpr extends Expr {
   leftChild: one Expr,
   rightChild: one Expr,
 }
 
+// Extend your model by expressions that model the unary operation Not.
 sig NotExpr extends Expr {
   child: one Expr,
 }
@@ -92,9 +92,6 @@ sig Variable {}
  * -------------------------------------------------------------------------------- */
 
 // TODO
-
-
-} 
 
 /* --------------------------------------------------------------------------------
  * Functions (Dynamic Model)
@@ -114,8 +111,6 @@ fun p_retval [e: Execution, f: Function]: Value {
 fun p_argval [e: Execution, f: Function, p: FormalParameter]: Value {
   True // TODO
 }
-
-//p_parameters in static model implemented (scroll down)
 
 // Returns the number of Not-expressions.
 fun p_numNot: Int {
