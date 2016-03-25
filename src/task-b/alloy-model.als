@@ -29,11 +29,8 @@ run inst5 for 5 but exactly 2 Type
 
 // ---------- Static Model of task B -------------------------------------------------- //
 
-pred show {
-//  (some f: Function | f not in MainFunction)
-//  (#FormalParameter = 3)
-}
-run show for 8
+pred show {}
+run show for 5
 
 /* --------------------------------------------------------------------------------
  * Signatures
@@ -97,7 +94,7 @@ sig Type {
 sig Variable {}
 
 /* --------------------------------------------------------------------------------
- * Facts
+ * Facts (Static Model)
  * -------------------------------------------------------------------------------- */
 
 // Functions consist of a linear sequence of statements.
@@ -195,7 +192,7 @@ fact {
 }
 
 /* --------------------------------------------------------------------------------
- * Functions
+ * Functions (Static Model)
  * -------------------------------------------------------------------------------- */
 
 // Returns the number of function calls (call expressions) in the program.
@@ -234,7 +231,7 @@ fun p_subExprs [e: Expr]: set Expr {
 }
 
 /* --------------------------------------------------------------------------------
- * Predicates
+ * Predicates (Static Model)
  * -------------------------------------------------------------------------------- */
 
 // true iff f contains a function call directly in its body.
@@ -274,7 +271,7 @@ pred p_assignsTo [s: Statement, vd: VarDecl] {
 }
 
 /* --------------------------------------------------------------------------------
- * Additional Relations
+ * Additional Relations (Static Model)
  * -------------------------------------------------------------------------------- */
 
 // Returns tuples of the form (caller, callee): (Function, Function), i.e. the function 'caller' calls the function 'calle' in its body.
