@@ -109,6 +109,11 @@ pred init [s: Step] {
   all e: Expr | s.exprValue[e] = Undefined
 }
 
+pred final [s: Step] {
+  all v: Variable | s.varValue[v] in (True + False)
+  all e: Expr | s.exprValue[e] in (True + False)
+}
+
 pred t_assignStmt [s, s': Step, a: AssignStatement] {
   s.exprValue[a.assignedValue] != Undefined &&
   s'.exprValue = s.exprValue &&
@@ -125,19 +130,12 @@ pred t_returnStmt [s, s': Step, rs: ReturnStatement] {
   s.exprValue[rs.returnValue] != Undefined &&
   s'.exprValue = s.exprValue ++ function.returnStmt.rs -> s.exprValue[rs.returnValue] &&
   s'.varValue = s.varValue
-  // TODO
 }
 
 pred t_callExpr [s, s': Step, ce: CallExpr] {
   all e: ce.actuals.FormalParameter | s.exprValue[e] != Undefined &&
   s'.exprValue = s.exprValue &&
-  all v: Variable, a: ce.actuals | (v in a[Expr].declaredVar) implies (s'.varValue[v] = s.exprValue[a.FormalParameter]) else (s'.varValue = s.varValue)
-  // calc actuals
-  // hand over to formals
-  // precond: all actuals/kids are already done
-  // precond no change in exprValue
-  // on return: expr evalutated + changes exprValue
-  // TODO
+  all v: Variable, e: Expr | (v in ce.actuals[e].declaredVar) implies (s'.varValue[v] = s.exprValue[e]) else (s'.varValue = s.varValue)
 }
 
 pred t_andExpr [s, s': Step, ae: AndExpr] {
@@ -164,7 +162,18 @@ pred t_literal [s, s': Step, l: Literal] {
 }
 
 fact traces {
-  init[first] // TODO
+  init[first] &&
+  all s: Step - last {
+    (some a: AssignStatement | t_assignStmt[s, s.next, a]) or
+    (some vd: VarDecl | t_varDecl[s, s.next, vd]) or
+    (some rs: ReturnStatement | t_returnStmt[s, s.next, rs]) or
+    (some ce: CallExpr | t_callExpr[s, s.next, ce]) or
+    (some ae: AndExpr | t_andExpr[s, s.next, ae]) or
+    (some ne: NotExpr | t_notExpr[s, s.next, ne]) or
+    (some vr: VariableReference | t_varRef[s, s.next, vr]) or
+    (some l: Literal | t_literal[s, s.next, l])
+  }
+  final[last]
 }
 
 /* --------------------------------------------------------------------------------
