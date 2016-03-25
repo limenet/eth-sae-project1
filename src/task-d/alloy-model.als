@@ -1,14 +1,13 @@
 /* TODO
  Simplify the model to BOOLEANLINEAR - done
- Add the model of executions - implementation pending
- signature Execution - implementation pending
+ Add the model of executions - first version
+ signature Execution - done
  signature Value - done
  functions - implementation pending
+ generate instances (task E) - pending
  check multiplicities
  use functions
 */
-
-open util/ordering[Step]
 
 // ---------- Instances for task E --------------------------------------------------- //
 
@@ -22,17 +21,9 @@ run show for 5
  * -------------------------------------------------------------------------------- */
 
 sig Execution {
-  steps: set Step,
   inputs: Value lone -> lone FormalParameter,
-}
-
-fact {
-  all e: Execution | e.inputs[Value] = MainFunction.formals
-}
-
-sig Step {
-  varValue: Variable -> Value, // An execution reflects the value of each variable at each point in the program.
-  exprValue: Expr -> Value, // An execution uniquely relates every expression in the program to a value from the set True, False, Undefined.
+  varValue: Statement -> Variable set -> lone Value, // An execution reflects the value of each variable at each point in the program.
+  exprValue: Expr set -> one Value, // An execution uniquely relates every expression in the program to a value from the set True, False, Undefined.
 }
 
 abstract sig Value {}
@@ -101,79 +92,59 @@ sig NotExpr extends Expr {
 sig Variable {}
 
 /* --------------------------------------------------------------------------------
- * Facts/Traces (Dynamic Model)
+ * Facts (Dynamic Model)
  * -------------------------------------------------------------------------------- */
 
-pred init [s: Step] {
-  no s.varValue &&
-  all e: Expr | s.exprValue[e] = Undefined
+fact {
+  all e: Execution | e.inputs[Value] = MainFunction.formals
+  all e: Execution, fp: MainFunction.formals | e.varValue[MainFunction.firstStmt][fp.declaredVar] = e.inputs.fp
 }
 
-pred final [s: Step] {
-  all v: Variable | s.varValue[v] in (True + False)
-  all e: Expr | s.exprValue[e] in (True + False)
+// Precondition that holds before the execution starts.
+fact {
+  all e: Execution | no e.varValue[MainFunction.firstStmt]
 }
 
-pred t_assignStmt [s, s': Step, a: AssignStatement] {
-  s.exprValue[a.assignedValue] != Undefined &&
-  s'.exprValue = s.exprValue &&
-  s'.varValue = s.varValue ++ a.assignedTo -> s.exprValue[a.assignedValue]
+// Invariants that need to hold after the execution terminates.
+assert inv {
+  all e: Execution, expr: Expr | e.exprValue[expr] in (True + False)
+  all e: Execution, v: Variable | e.varValue[MainFunction.returnStmt][v] in (True + False)
 }
 
-pred t_varDecl [s, s': Step, vd: VarDecl] {
-  no s.varValue[vd.declaredVar] &&
-  s'.exprValue = s.exprValue &&
-  s'.varValue = s.varValue ++ vd.declaredVar -> Undefined
+fact {
+  all e: Execution, a: AssignStatement |
+    e.varValue[a.successor] = e.varValue[a] ++ a.assignedTo -> e.exprValue[a.assignedValue]
 }
 
-pred t_returnStmt [s, s': Step, rs: ReturnStatement] {
-  s.exprValue[rs.returnValue] != Undefined &&
-  s'.exprValue = s.exprValue ++ function.returnStmt.rs -> s.exprValue[rs.returnValue] &&
-  s'.varValue = s.varValue
+fact {
+  all e: Execution, vd: VarDecl |
+    e.varValue[vd.successor] = e.varValue[vd] ++ vd.declaredVar -> Undefined
 }
 
-pred t_callExpr [s, s': Step, ce: CallExpr] {
-  all e: ce.actuals.FormalParameter | s.exprValue[e] != Undefined &&
-  s'.exprValue = s.exprValue &&
-  all v: Variable, e: Expr | (v in ce.actuals[e].declaredVar) implies (s'.varValue[v] = s.exprValue[e]) else (s'.varValue = s.varValue)
+fact {
+  all e: Execution, ce: CallExpr |
+    (all a: Expr, fp: FormalParameter | (fp in ce.actuals[a]) implies (e.varValue[ce.function.firstStmt][fp.declaredVar] = e.exprValue[a])) &&
+    (e.exprValue[ce] = e.exprValue[ce.function.returnStmt.returnValue])
 }
 
-pred t_andExpr [s, s': Step, ae: AndExpr] {
-  s.exprValue[ae.leftChild] != Undefined &&
-  s.exprValue[ae.rightChild] != Undefined &&
-  (s.exprValue[ae.leftChild] = True && s.exprValue[ae.rightChild] = True) implies (s'.exprValue = s.exprValue ++ ae -> True) else (s'.exprValue = s.exprValue ++ ae -> False) &&
-  s'.varValue = s.varValue
+fact {
+  all e: Execution, ae: AndExpr |
+    (e.exprValue[ae.leftChild] = True && e.exprValue[ae.rightChild] = True) implies (e.exprValue[ae] = True) else (e.exprValue[ae] = False)
 }
 
-pred t_notExpr [s, s': Step, ne: NotExpr] {
-  s.exprValue[ne.child] != Undefined &&
-  (s.exprValue[ne.child] = True) implies (s'.exprValue = s.exprValue ++ ne -> False) else (s'.exprValue = s.exprValue ++ ne -> True) &&
-  s'.varValue = s.varValue
+fact {
+  all e: Execution, ne: NotExpr |
+    (e.exprValue[ne.child] = True) implies (e.exprValue[ne] = False) else (e.exprValue[ne] = True)
 }
 
-pred t_varRef [s, s': Step, vr: VariableReference] {
-  s'.exprValue = s.exprValue ++ vr -> s.varValue[vr.referredVar] &&
-  s'.varValue = s.varValue
+fact {
+  all e: Execution, vr: VariableReference |
+    e.exprValue[vr] = e.varValue[(exprs.*children).vr][vr.referredVar]
 }
 
-pred t_literal [s, s': Step, l: Literal] {
-  s'.exprValue = s.exprValue ++ l -> l.value &&
-  s'.varValue = s.varValue
-}
-
-fact traces {
-  init[first] &&
-  all s: Step - last {
-    (some a: AssignStatement | t_assignStmt[s, s.next, a]) or
-    (some vd: VarDecl | t_varDecl[s, s.next, vd]) or
-    (some rs: ReturnStatement | t_returnStmt[s, s.next, rs]) or
-    (some ce: CallExpr | t_callExpr[s, s.next, ce]) or
-    (some ae: AndExpr | t_andExpr[s, s.next, ae]) or
-    (some ne: NotExpr | t_notExpr[s, s.next, ne]) or
-    (some vr: VariableReference | t_varRef[s, s.next, vr]) or
-    (some l: Literal | t_literal[s, s.next, l])
-  }
-  final[last]
+fact {
+  all e: Execution, l: Literal |
+    e.exprValue[l] = l.value
 }
 
 /* --------------------------------------------------------------------------------
