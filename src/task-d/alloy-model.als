@@ -6,7 +6,7 @@
  functions - done
  generate instances (task E) - pending
  check multiplicities - done
- use functions - pending
+ use functions - done, review pending
 */
 
 // ---------- Instances for task E --------------------------------------------------- //
@@ -98,19 +98,19 @@ sig Variable {}
 // Precondition that holds before the execution starts.
 fact {
   all e: Execution | e.inputs[Value] = MainFunction.formals
-  all e: Execution, fp: FormalParameter | (fp in MainFunction.formals) implies (e.varValue[MainFunction.firstStmt][fp.declaredVar] = e.inputs.fp) else (no e.varValue[MainFunction.firstStmt][fp.declaredVar])
-  all e: Execution, vd: VarDecl | no e.varValue[MainFunction.firstStmt][vd.declaredVar]
+  all e: Execution, fp: FormalParameter | (fp in MainFunction.formals) implies (p_argval[e, MainFunction, fp] = e.inputs.fp) else (no p_argval[e, MainFunction, fp])
+  all e: Execution, vd: VarDecl | no p_argval[e, MainFunction, vd]
 }
 
 // Invariants that need to hold after the execution terminates.
 assert inv {
-  all e: Execution, expr: Expr | e.exprValue[expr] in (True + False)
-  all e: Execution, v: Variable | e.varValue[MainFunction.returnStmt][v] in (True + False)
+  all e: Execution, expr: Expr | p_val[e, expr] in (True + False)
+  all e: Execution, v: Variable | p_valbefore[e, MainFunction.returnStmt, v] in (True + False)
 }
 
 fact {
   all e: Execution, a: AssignStatement |
-    e.varValue[a.successor] = e.varValue[a] ++ a.assignedTo -> e.exprValue[a.assignedValue]
+    e.varValue[a.successor] = e.varValue[a] ++ a.assignedTo -> p_val[e, a.assignedValue]
 }
 
 fact {
@@ -120,28 +120,28 @@ fact {
 
 fact {
   all e: Execution, ce: CallExpr |
-    (all a: Expr, fp: FormalParameter | (fp in ce.actuals[a]) implies (e.varValue[ce.function.firstStmt][fp.declaredVar] = e.exprValue[a])) &&
-    (e.exprValue[ce] = e.exprValue[ce.function.returnStmt.returnValue])
+    (all a: Expr, fp: FormalParameter | (fp in ce.actuals[a]) implies (p_argval[e, ce.function, fp] = p_val[e, a])) &&
+    (p_val[e, ce] = p_val[e, ce.function.returnStmt.returnValue]) // nested functions are (apparently) not possible; p_retval cannot be used
 }
 
 fact {
   all e: Execution, ae: AndExpr |
-    (e.exprValue[ae.leftChild] = True && e.exprValue[ae.rightChild] = True) implies (e.exprValue[ae] = True) else (e.exprValue[ae] = False)
+    (p_val[e, ae.leftChild] = True && p_val[e, ae.rightChild] = True) implies (p_val[e, ae] = True) else (p_val[e, ae] = False)
 }
 
 fact {
   all e: Execution, ne: NotExpr |
-    (e.exprValue[ne.child] = True) implies (e.exprValue[ne] = False) else (e.exprValue[ne] = True)
+    (p_val[e, ne.child] = True) implies (p_val[e, ne] = False) else (p_val[e, ne] = True)
 }
 
 fact {
   all e: Execution, vr: VariableReference |
-    e.exprValue[vr] = e.varValue[(exprs.*children).vr][vr.referredVar]
+    p_val[e, vr] = e.varValue[(exprs.*children).vr][vr.referredVar]
 }
 
 fact {
   all e: Execution, l: Literal |
-    e.exprValue[l] = l.value
+    p_val[e, l] = l.value
 }
 
 /* --------------------------------------------------------------------------------
@@ -160,7 +160,7 @@ fun p_retval [e: Execution, f: Function]: Value {
 
 // Returns the value of formal parameter p in execution e.
 fun p_argval [e: Execution, f: Function, p: FormalParameter]: Value {
-  e.varValue[f.firstStmt][p.declaredVar]
+  p_valbefore[e, f.firstStmt, p.declaredVar]
 }
 
 // Returns the number of Not-expressions.
