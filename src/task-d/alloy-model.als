@@ -30,7 +30,7 @@ pred inst2{
     implies (p_retval[e, MainFunction] = False)
     else (p_retval[e, MainFunction] = True)
 }
-run inst2 
+run inst2
 
 // A program that takes 2 arguments, has at least one literal and one assignment and computes OR.
 pred inst3{
@@ -41,8 +41,8 @@ pred inst3{
     (p_valbefore[e, MainFunction.firstStmt, fp.declaredVar] = False && p_valbefore[e, MainFunction.firstStmt, fp'.declaredVar] = False)
     implies (p_retval[e, MainFunction] = False)
     else (p_retval[e, MainFunction] = True)
-} // NOT feasible
-run inst3 
+}
+run inst3
 
 // A program that takes 2 arguments and computes XOR.
 pred inst4{
@@ -69,7 +69,7 @@ pred inst5{
     implies (p_retval[e, MainFunction] = False)
     else (p_retval[e, MainFunction] = True) &&
 	some disj f1, f2, f3: Function | (AndExpr in f1.statements.exprs && NotExpr in f2.statements.exprs && f3 = MainFunction)
-} //NOT feasible
+}
 run inst5
 
 // ---------- Dynamic Model of task D ---------------------------------------------- //
