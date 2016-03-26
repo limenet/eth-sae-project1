@@ -5,8 +5,8 @@
  signature Value - done
  functions - done
  generate instances (task E) - pending
- check multiplicities
- use functions
+ check multiplicities - done
+ use functions - pending
 */
 
 // ---------- Instances for task E --------------------------------------------------- //
@@ -21,7 +21,7 @@ run show for 5
  * -------------------------------------------------------------------------------- */
 
 sig Execution {
-  inputs: Value lone -> lone FormalParameter,
+  inputs: (True + False) lone -> lone FormalParameter,
   varValue: Statement -> Variable set -> lone Value, // An execution reflects the value of each variable at each point in the program, i.e. before each statement in the program.
   exprValue: Expr set -> one Value, // An execution uniquely relates every expression in the program to a value from the set True, False, Undefined.
 }
@@ -95,14 +95,11 @@ sig Variable {}
  * Facts (Dynamic Model)
  * -------------------------------------------------------------------------------- */
 
-fact {
-  all e: Execution | e.inputs[Value] = MainFunction.formals
-  all e: Execution, fp: MainFunction.formals | e.varValue[MainFunction.firstStmt][fp.declaredVar] = e.inputs.fp
-}
-
 // Precondition that holds before the execution starts.
 fact {
-  all e: Execution | no e.varValue[MainFunction.firstStmt]
+  all e: Execution | e.inputs[Value] = MainFunction.formals
+  all e: Execution, fp: FormalParameter | (fp in MainFunction.formals) implies (e.varValue[MainFunction.firstStmt][fp.declaredVar] = e.inputs.fp) else (no e.varValue[MainFunction.firstStmt][fp.declaredVar])
+  all e: Execution, vd: VarDecl | no e.varValue[MainFunction.firstStmt][vd.declaredVar]
 }
 
 // Invariants that need to hold after the execution terminates.
