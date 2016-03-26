@@ -4,7 +4,7 @@
  signature Execution - done
  signature Value - done
  functions - done
- generate instances (task E) - pending
+ generate instances (task E) - done - review pending - explanation for infeasibility pending
  check multiplicities - done
  use functions - done
 */
