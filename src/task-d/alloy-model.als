@@ -3,7 +3,7 @@
  Add the model of executions - first version
  signature Execution - done
  signature Value - done
- functions - work in progress
+ functions - done, review pending
  generate instances (task E) - pending
  check multiplicities
  use functions
@@ -163,7 +163,7 @@ fun p_retval [e: Execution, f: Function]: Value {
 
 // Returns the value of formal parameter p in execution e.
 fun p_argval [e: Execution, f: Function, p: FormalParameter]: Value {
-  True // TODO
+  e.varValue[f.firstStmt][p.declaredVar]
 }
 
 // Returns the number of Not-expressions.
