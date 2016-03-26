@@ -11,6 +11,66 @@
 
 // ---------- Instances for task E --------------------------------------------------- //
 
+//A program that takes 2 arguments and computes AND
+pred inst1{
+  #MainFunction.formals = 2 &&
+  all e: Execution, disj fp, fp': MainFunction.formals |
+    (p_valbefore[e, MainFunction.firstStmt, fp.declaredVar] = True && p_valbefore[e, MainFunction.firstStmt, fp'.declaredVar] = True)
+    implies (p_retval[e, MainFunction] = True)
+    else (p_retval[e, MainFunction] = False)
+}
+run inst1
+
+//A program that takes 2 arguments and computes NAND
+pred inst2{
+	#MainFunction.formals = 2 &&
+	 all e: Execution, disj fp, fp': MainFunction.formals |
+    (p_valbefore[e, MainFunction.firstStmt, fp.declaredVar] = True && p_valbefore[e, MainFunction.firstStmt, fp'.declaredVar] = True)
+    implies (p_retval[e, MainFunction] = False)
+    else (p_retval[e, MainFunction] = True)
+}
+run inst2 
+
+//A program that takes 2 arguments, has at least one literal and one assignment and computes OR
+pred inst3{
+	#MainFunction.formals = 2 &&
+	some Literal &&
+	some AssignStatement &&
+	all e: Execution, disj fp, fp': MainFunction.formals |
+    (p_valbefore[e, MainFunction.firstStmt, fp.declaredVar] = False && p_valbefore[e, MainFunction.firstStmt, fp'.declaredVar] = False)
+    implies (p_retval[e, MainFunction] = False)
+    else (p_retval[e, MainFunction] = True)
+} // NOT feasible
+run inst3 
+
+//A program that takes 2 arguments and computes XOR
+pred inst4{
+	#MainFunction.formals = 2 &&
+	 all e: Execution, disj fp, fp': MainFunction.formals |
+   		 (p_valbefore[e, MainFunction.firstStmt, fp.declaredVar] = False && p_valbefore[e, MainFunction.firstStmt, fp'.declaredVar] = False)
+    implies (p_retval[e, MainFunction] = False)
+    else (
+		(p_valbefore[e, MainFunction.firstStmt, fp.declaredVar] = True && p_valbefore[e, MainFunction.firstStmt, fp'.declaredVar] = True)
+    		implies (p_retval[e, MainFunction] = False)
+		else(p_retval[e, MainFunction] = True)
+	)
+}
+run inst4
+
+/*A program that takes 2 arguments, has 3 functions and at least one assignment and computes NAND. Here, one function that is not the main
+function should contain an And, and the other function that is not the main function should contain a Not.*/
+pred inst5{
+	#MainFunction.formals = 2 &&
+	#Function = 3 &&
+	some AssignStatement &&
+	all e: Execution, disj fp, fp': MainFunction.formals |
+    		(p_valbefore[e, MainFunction.firstStmt, fp.declaredVar] = True && p_valbefore[e, MainFunction.firstStmt, fp'.declaredVar] = True)
+    implies (p_retval[e, MainFunction] = False)
+    else (p_retval[e, MainFunction] = True) &&
+	some disj f1, f2, f3: Function | (AndExpr in f1.statements.exprs && NotExpr in f2.statements.exprs && f3 = MainFunction)
+} //NOT feasible
+run inst5
+
 // ---------- Dynamic Model of task D ---------------------------------------------- //
 
 pred show {}
@@ -21,7 +81,7 @@ run show for 5
  * -------------------------------------------------------------------------------- */
 
 sig Execution {
-  inputs: (True + False) lone -> lone FormalParameter,
+  inputs: (True + False) lone -> set FormalParameter,
   varValue: Statement -> Variable set -> lone Value, // An execution reflects the value of each variable at each point in the program, i.e. before each statement in the program.
   exprValue: Expr set -> one Value, // An execution uniquely relates every expression in the program to a value from the set True, False, Undefined.
 }
@@ -158,7 +218,7 @@ fun p_retval [e: Execution, f: Function]: Value {
   e.exprValue[f.returnStmt.returnValue]
 }
 
-// Returns the value of formal parameter p in execution e.
+// Returns the value of formal parameter p of funcion f in execution e.
 fun p_argval [e: Execution, f: Function, p: FormalParameter]: Value {
   e.varValue[f.firstStmt][p.declaredVar]
 }
