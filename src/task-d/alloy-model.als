@@ -99,7 +99,7 @@ sig Variable {}
 fact {
   all e: Execution | e.inputs[Value] = MainFunction.formals
   all e: Execution, fp: FormalParameter | (fp in MainFunction.formals) implies (p_argval[e, MainFunction, fp] = e.inputs.fp) else (no p_argval[e, MainFunction, fp])
-  all e: Execution, vd: VarDecl | no p_argval[e, MainFunction, vd]
+  all e: Execution, vd: VarDecl | no e.varValue[MainFunction.firstStmt][vd.declaredVar] //no p_argval call possible since it expects a function and not MainFunction
 }
 
 // Invariants that need to hold after the execution terminates.
