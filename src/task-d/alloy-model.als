@@ -11,6 +11,15 @@
 
 // ---------- Instances for task E --------------------------------------------------- //
 
+pred inst1{
+  #MainFunction.formals = 2 &&
+  all e: Execution, disj fp, fp': MainFunction.formals |
+    (p_valbefore[e, MainFunction.firstStmt, fp.declaredVar] = True && p_valbefore[e, MainFunction.firstStmt, fp'.declaredVar] = True)
+    implies (p_retval[e, MainFunction] = True)
+    else (p_retval[e, MainFunction] = False)
+}
+run inst1
+
 // ---------- Dynamic Model of task D ---------------------------------------------- //
 
 pred show {}
@@ -21,7 +30,7 @@ run show for 5
  * -------------------------------------------------------------------------------- */
 
 sig Execution {
-  inputs: (True + False) lone -> lone FormalParameter,
+  inputs: FormalParameter set -> lone (True +False),
   varValue: Statement -> Variable set -> lone Value, // An execution reflects the value of each variable at each point in the program, i.e. before each statement in the program.
   exprValue: Expr set -> one Value, // An execution uniquely relates every expression in the program to a value from the set True, False, Undefined.
 }
@@ -97,8 +106,8 @@ sig Variable {}
 
 // Precondition that holds before the execution starts.
 fact {
-  all e: Execution | e.inputs[Value] = MainFunction.formals
-  all e: Execution, fp: FormalParameter | (fp in MainFunction.formals) implies (p_argval[e, MainFunction, fp] = e.inputs.fp) else (no p_argval[e, MainFunction, fp])
+  all e: Execution | e.inputs.Value = MainFunction.formals
+  all e: Execution, fp: FormalParameter | (fp in MainFunction.formals) implies (p_argval[e, MainFunction, fp] = e.inputs[fp]) else (no p_argval[e, MainFunction, fp])
   all e: Execution, vd: VarDecl | no e.varValue[MainFunction.firstStmt][vd.declaredVar]
 }
 
