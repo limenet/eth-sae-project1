@@ -3,7 +3,7 @@
  Add the model of executions - first version
  signature Execution - done
  signature Value - done
- functions - done, review pending
+ functions - done
  generate instances (task E) - pending
  check multiplicities
  use functions
@@ -22,7 +22,7 @@ run show for 5
 
 sig Execution {
   inputs: Value lone -> lone FormalParameter,
-  varValue: Statement -> Variable set -> lone Value, // An execution reflects the value of each variable at each point in the program.
+  varValue: Statement -> Variable set -> lone Value, // An execution reflects the value of each variable at each point in the program, i.e. before each statement in the program.
   exprValue: Expr set -> one Value, // An execution uniquely relates every expression in the program to a value from the set True, False, Undefined.
 }
 
@@ -173,7 +173,7 @@ fun p_numNot: Int {
 
 // Returns the value of variable v before executing statement s in execution e.
 fun p_valbefore [e: Execution, s: Statement, v: Variable]: Value {
-  e.varValue[ s.predecessor][v]
+  e.varValue[s][v]
 }
 
 /* --------------------------------------------------------------------------------
