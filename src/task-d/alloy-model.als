@@ -4,7 +4,7 @@
  signature Execution - done
  signature Value - done
  functions - done
- generate instances (task E) - done - review pending - explanation for infeasibility pending
+ generate instances (task E) - done - explanation for infeasibility pending
  check multiplicities - done
  use functions - done
 */
@@ -13,62 +13,58 @@
 
 
 // A program that takes 2 arguments and computes AND.
-pred inst1{
+pred inst1 {
   #MainFunction.formals = 2 &&
   all e: Execution, disj fp, fp': MainFunction.formals |
-    (p_valbefore[e, MainFunction.firstStmt, fp.declaredVar] = True && p_valbefore[e, MainFunction.firstStmt, fp'.declaredVar] = True)
+    (p_argval[e, MainFunction, fp] = True && p_argval[e, MainFunction, fp'] = True)
     implies (p_retval[e, MainFunction] = True)
     else (p_retval[e, MainFunction] = False)
 }
 run inst1
 
 // A program that takes 2 arguments and computes NAND.
-pred inst2{
-	#MainFunction.formals = 2 &&
-	 all e: Execution, disj fp, fp': MainFunction.formals |
-    (p_valbefore[e, MainFunction.firstStmt, fp.declaredVar] = True && p_valbefore[e, MainFunction.firstStmt, fp'.declaredVar] = True)
+pred inst2 {
+  #MainFunction.formals = 2 &&
+  all e: Execution, disj fp, fp': MainFunction.formals |
+    (p_argval[e, MainFunction, fp] = True && p_argval[e, MainFunction, fp'] = True)
     implies (p_retval[e, MainFunction] = False)
     else (p_retval[e, MainFunction] = True)
 }
 run inst2
 
 // A program that takes 2 arguments, has at least one literal and one assignment and computes OR.
-pred inst3{
-	#MainFunction.formals = 2 &&
-	some Literal &&
-	some AssignStatement &&
-	all e: Execution, disj fp, fp': MainFunction.formals |
-    (p_valbefore[e, MainFunction.firstStmt, fp.declaredVar] = False && p_valbefore[e, MainFunction.firstStmt, fp'.declaredVar] = False)
+pred inst3 {
+  #MainFunction.formals = 2 &&
+  some Literal &&
+  some AssignStatement &&
+  all e: Execution, disj fp, fp': MainFunction.formals |
+    (p_argval[e, MainFunction, fp] = False && p_argval[e, MainFunction, fp'] = False)
     implies (p_retval[e, MainFunction] = False)
     else (p_retval[e, MainFunction] = True)
 }
 run inst3
 
 // A program that takes 2 arguments and computes XOR.
-pred inst4{
-	#MainFunction.formals = 2 &&
-	 all e: Execution, disj fp, fp': MainFunction.formals |
-   		 (p_valbefore[e, MainFunction.firstStmt, fp.declaredVar] = False && p_valbefore[e, MainFunction.firstStmt, fp'.declaredVar] = False)
+pred inst4 {
+  #MainFunction.formals = 2 &&
+  all e: Execution, disj fp, fp': MainFunction.formals |
+    (p_argval[e, MainFunction, fp] = False && p_argval[e, MainFunction, fp'] = False) or (p_argval[e, MainFunction, fp] = True && p_argval[e, MainFunction, fp'] = True)
     implies (p_retval[e, MainFunction] = False)
-    else (
-		(p_valbefore[e, MainFunction.firstStmt, fp.declaredVar] = True && p_valbefore[e, MainFunction.firstStmt, fp'.declaredVar] = True)
-    		implies (p_retval[e, MainFunction] = False)
-		else(p_retval[e, MainFunction] = True)
-	)
+    else (p_retval[e, MainFunction] = True)
 }
 run inst4
 
 // A program that takes 2 arguments, has 3 functions and at least one assignment and computes NAND.
 // Here, one function that is not the main function should contain an And, and the other function that is not the main function should contain a Not.
-pred inst5{
-	#MainFunction.formals = 2 &&
-	#Function = 3 &&
-	some AssignStatement &&
-	all e: Execution, disj fp, fp': MainFunction.formals |
-    		(p_valbefore[e, MainFunction.firstStmt, fp.declaredVar] = True && p_valbefore[e, MainFunction.firstStmt, fp'.declaredVar] = True)
+pred inst5 {
+  #MainFunction.formals = 2 &&
+  #Function = 3 &&
+  some AssignStatement &&
+  some disj f, f': (Function - MainFunction) | (one f.statements.exprs.*children :> AndExpr && one f'.statements.exprs.*children :> NotExpr) &&
+  all e: Execution, disj fp, fp': MainFunction.formals |
+    (p_argval[e, MainFunction, fp] = True && p_argval[e, MainFunction, fp'] = True)
     implies (p_retval[e, MainFunction] = False)
-    else (p_retval[e, MainFunction] = True) &&
-	some disj f1, f2, f3: Function | (AndExpr in f1.statements.exprs && NotExpr in f2.statements.exprs && f3 = MainFunction)
+    else (p_retval[e, MainFunction] = True)
 }
 run inst5
 
