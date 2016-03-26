@@ -6,7 +6,7 @@
  functions - done
  generate instances (task E) - pending
  check multiplicities - done
- use functions - done, review pending
+ use functions - done
 */
 
 // ---------- Instances for task E --------------------------------------------------- //
@@ -121,7 +121,7 @@ fact {
 fact {
   all e: Execution, ce: CallExpr |
     (all a: Expr, fp: FormalParameter | (fp in ce.actuals[a]) implies (p_argval[e, ce.function, fp] = p_val[e, a])) &&
-    (p_val[e, ce] = p_val[e, ce.function.returnStmt.returnValue]) // nested functions are (apparently) not possible; p_retval cannot be used
+    (p_val[e, ce] = p_retval[e, ce.function])
 }
 
 fact {
@@ -155,7 +155,7 @@ fun p_val [e: Execution, p: Expr]: Value {
 
 // Returns the return value of f in e.
 fun p_retval [e: Execution, f: Function]: Value {
-  e.exprValue[f.returnStmt.returnValue]
+  p_val[e, f.returnStmt.returnValue]
 }
 
 // Returns the value of formal parameter p in execution e.
