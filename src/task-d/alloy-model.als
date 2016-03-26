@@ -1,6 +1,6 @@
 /* TODO
  Simplify the model to BOOLEANLINEAR - done
- Add the model of executions - first version
+ Add the model of executions - done
  signature Execution - done
  signature Value - done
  functions - done
@@ -12,7 +12,7 @@
 // ---------- Instances for task E --------------------------------------------------- //
 
 
-//A program that takes 2 arguments and computes AND
+// A program that takes 2 arguments and computes AND.
 pred inst1{
   #MainFunction.formals = 2 &&
   all e: Execution, disj fp, fp': MainFunction.formals |
@@ -22,7 +22,7 @@ pred inst1{
 }
 run inst1
 
-//A program that takes 2 arguments and computes NAND
+// A program that takes 2 arguments and computes NAND.
 pred inst2{
 	#MainFunction.formals = 2 &&
 	 all e: Execution, disj fp, fp': MainFunction.formals |
@@ -32,7 +32,7 @@ pred inst2{
 }
 run inst2 
 
-//A program that takes 2 arguments, has at least one literal and one assignment and computes OR
+// A program that takes 2 arguments, has at least one literal and one assignment and computes OR.
 pred inst3{
 	#MainFunction.formals = 2 &&
 	some Literal &&
@@ -44,7 +44,7 @@ pred inst3{
 } // NOT feasible
 run inst3 
 
-//A program that takes 2 arguments and computes XOR
+// A program that takes 2 arguments and computes XOR.
 pred inst4{
 	#MainFunction.formals = 2 &&
 	 all e: Execution, disj fp, fp': MainFunction.formals |
@@ -58,8 +58,8 @@ pred inst4{
 }
 run inst4
 
-/*A program that takes 2 arguments, has 3 functions and at least one assignment and computes NAND. Here, one function that is not the main
-function should contain an And, and the other function that is not the main function should contain a Not.*/
+// A program that takes 2 arguments, has 3 functions and at least one assignment and computes NAND.
+// Here, one function that is not the main function should contain an And, and the other function that is not the main function should contain a Not.
 pred inst5{
 	#MainFunction.formals = 2 &&
 	#Function = 3 &&
@@ -160,7 +160,7 @@ sig Variable {}
 fact {
   all e: Execution | e.inputs.Value = MainFunction.formals
   all e: Execution, fp: FormalParameter | (fp in MainFunction.formals) implies (p_argval[e, MainFunction, fp] = e.inputs[fp]) else (no p_argval[e, MainFunction, fp])
-  all e: Execution, vd: VarDecl | no e.varValue[MainFunction.firstStmt][vd.declaredVar]
+  all e: Execution, vd: VarDecl | no p_valbefore[e, MainFunction.firstStmt, vd.declaredVar]
 }
 
 // Invariants that need to hold after the execution terminates.
@@ -197,7 +197,7 @@ fact {
 
 fact {
   all e: Execution, vr: VariableReference |
-    p_val[e, vr] = e.varValue[(exprs.*children).vr][vr.referredVar]
+    p_val[e, vr] = p_valbefore[e, (exprs.*children).vr, vr.referredVar]
 }
 
 fact {
@@ -209,17 +209,17 @@ fact {
  * Functions (Dynamic Model)
  * -------------------------------------------------------------------------------- */
 
-// Returns the value of p in execution e.
+// Returns the value of expression p in execution e.
 fun p_val [e: Execution, p: Expr]: Value {
   e.exprValue[p]
 }
 
-// Returns the return value of f in e.
+// Returns the return value of function f in execution e.
 fun p_retval [e: Execution, f: Function]: Value {
   p_val[e, f.returnStmt.returnValue]
 }
 
-// Returns the value of formal parameter p of funcion f in execution e.
+// Returns the value of formal parameter p of function f in execution e.
 fun p_argval [e: Execution, f: Function, p: FormalParameter]: Value {
   p_valbefore[e, f.firstStmt, p.declaredVar]
 }
