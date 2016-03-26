@@ -1,11 +1,14 @@
 // ---------- Instances for task C --------------------------------------------------- //
 
+// A program with one function, 2 function calls.
 pred inst1 {}
 run inst1 for 5 but exactly 2 CallExpr, 1 Function
 
+// A program with two functions, 2 function calls.
 pred inst2 {}
 run inst2 for 5 but exactly 2 CallExpr, 2 Function
 
+// A program with exactly 1 assignment, 1 variable, 1 literal (no restrictions on other kinds of expressions).
 pred inst3 {
   one AssignStatement
   one Literal
@@ -13,6 +16,9 @@ pred inst3 {
 }
 run inst3
 
+// A program with exactly 1 function call, which is on the right-hand side of an assignment.
+// The expression inside the called function’s return statement is of a different type than the return type of the function,
+// and both are different from the type of the variable on the left-hand side of the assignment.
 pred inst4 {
   some a: AssignStatement, ce: a.assignedValue {
     ce in CallExpr
@@ -21,6 +27,7 @@ pred inst4 {
 }
 run inst4 for 5 but exactly 1 CallExpr
 
+// A program with exactly 1 literal and exactly 2 incomparable types.
 pred inst5 {
   one Literal
   all disj t1, t2: Type | t1 != t2.supertype
@@ -160,7 +167,6 @@ fact {
 
 // We do not allow dead assignments (assignments that are not followed by a read of the variable).
 fact {
-//  all a: AssignStatement | a.assignedTo in p_statementsAfter[a].exprs.reads // assignment is followed by any read of the variable, not necessary the assigned value
   all a: AssignStatement, v: a.assignedTo | some s: p_statementsAfter[a] | v in s.exprs.reads && (no s': (p_statementsAfter[a] - p_statementsAfter[s]) | v= s'.assignedTo)
 }
 
