@@ -3,7 +3,7 @@
  Add the model of executions - first version
  signature Execution - done
  signature Value - done
- functions - implementation pending
+ functions - work in progress
  generate instances (task E) - pending
  check multiplicities
  use functions
@@ -153,12 +153,12 @@ fact {
 
 // Returns the value of p in execution e.
 fun p_val [e: Execution, p: Expr]: Value {
-  True // TODO
+  e.exprValue[p]
 }
 
 // Returns the return value of f in e.
 fun p_retval [e: Execution, f: Function]: Value {
-  True // TODO
+  e.exprValue[f.returnStmt.returnValue]
 }
 
 // Returns the value of formal parameter p in execution e.
@@ -173,7 +173,7 @@ fun p_numNot: Int {
 
 // Returns the value of variable v before executing statement s in execution e.
 fun p_valbefore [e: Execution, s: Statement, v: Variable]: Value {
-  True // TODO
+  e.varValue[ s.predecessor][v]
 }
 
 /* --------------------------------------------------------------------------------
