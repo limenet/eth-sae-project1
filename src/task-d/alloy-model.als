@@ -1,14 +1,3 @@
-/* TODO
- Simplify the model to BOOLEANLINEAR - done
- Add the model of executions - done
- signature Execution - done
- signature Value - done
- functions - done
- generate instances (task E) - done - explanation for infeasibility pending
- check multiplicities - done
- use functions - done
-*/
-
 // ---------- Instances for task E --------------------------------------------------- //
 
 

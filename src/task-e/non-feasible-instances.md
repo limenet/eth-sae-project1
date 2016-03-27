@@ -1,3 +1,1 @@
 # Instances that are not feasible in task E
-
-- Instance 3 is not feasible ...
