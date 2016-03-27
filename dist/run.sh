@@ -17,4 +17,5 @@ wkhtmltopdf out.html hand-in.pdf
 
 rm -r src/
 rm -r xml/
+rm out.html
 rm pdf.md
