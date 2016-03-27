@@ -1,4 +1,4 @@
-# Elements that are not encodable in the Alloy model
+# Elements that are not encodable in the Alloy model for task B
 
 (The non-Alloy-encodable element is listed first. An optional explanation is in parentheses.)
 
