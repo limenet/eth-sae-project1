@@ -34,3 +34,15 @@
 !loop-images instances/task-c/inst4/*.png
 
 !include ../src/task-e/non-feasible-instances.md
+
+## Image exports from task E
+
+### Instance 2
+*(truncated to 50 items)*
+!loop-images instances/task-e/inst1/*.png
+
+### Instance 3
+!loop-images instances/task-e/inst2/*.png
+
+### Instance 4
+!loop-images instances/task-e/inst4/*.png
