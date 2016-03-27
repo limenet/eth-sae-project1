@@ -34,6 +34,8 @@
 ### Instance 2
 !loop-images instances/task-c/inst2/*.png
 
+<div class="break-after"></div>
+
 ### Instance 3
 !loop-images instances/task-c/inst3/*.png
 
@@ -54,6 +56,8 @@
 
 ### Instance 2
 !loop-images instances/task-e/inst2/*.png
+
+<div class="break-after"></div>
 
 ### Instance 3
 !loop-images instances/task-e/inst3/*.png
