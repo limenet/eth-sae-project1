@@ -24,9 +24,9 @@
 ## Alloy model from task D
 <img src="img/task-d_metamodel.png">
 
-!include ../src/task-c/non-feasible-instances.md
-
 <div class="break-after"></div>
+
+!include ../src/task-c/non-feasible-instances.md
 
 ## Image exports from task C
 (We only show one screen per generated instance.)
@@ -42,9 +42,9 @@
 ### Instance 4
 !loop-images instances/task-c/inst4/*.png
 
-!include ../src/task-e/non-feasible-instances.md
-
 <div class="break-after"></div>
+
+!include ../src/task-e/non-feasible-instances.md
 
 ## Image exports from task E
 (We only show one screen per generated instance.)
