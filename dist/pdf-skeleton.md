@@ -4,6 +4,8 @@
 
 # ETH SAE Project 1 - Sherlock
 
+*Source code and XML files are in `hand-in.zip`.*
+
 ## UML class diagram
 
 <img src="img/uml-diagram.png">
