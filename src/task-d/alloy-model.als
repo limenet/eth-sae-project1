@@ -34,9 +34,7 @@ run inst2 for exactly 4 Execution, 1 Function, 1 Statement, 2 FormalParameter, 4
 
 // A program that takes 2 arguments, has at least one literal and one assignment and computes OR.
 pred inst3 {
-  #Execution = 4 &&
   all disj e1, e2: Execution | e1.inputs != e2.inputs &&
-  #MainFunction.formals = 2 &&
   some Literal &&
   some AssignStatement &&
   all e: Execution, disj fp, fp': MainFunction.formals |
@@ -44,7 +42,8 @@ pred inst3 {
     implies (p_retval[e, MainFunction] = False)
     else (p_retval[e, MainFunction] = True)
 }
-run inst3 for 7
+// A OR B = !(!(A && True) && !B)
+run inst3 for exactly 4 Execution, 1 Function, 3 Statement, 2 FormalParameter, 9 Expr, 3 Variable
 
 // A program that takes 2 arguments and computes XOR.
 pred inst4 {
