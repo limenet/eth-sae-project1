@@ -41,8 +41,14 @@
 *(truncated to 50 items)*
 !loop-images instances/task-e/inst1/*.png
 
-### Instance 3
+### Instance 2
 !loop-images instances/task-e/inst2/*.png
+
+### Instance 3
+!loop-images instances/task-e/inst3/*.png
 
 ### Instance 4
 !loop-images instances/task-e/inst4/*.png
+
+### Instance 5
+!loop-images instances/task-e/inst5/*.png
