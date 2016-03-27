@@ -37,7 +37,7 @@
 
 ## Image exports from task E
 
-### Instance 2
+### Instance 1
 !loop-images instances/task-e/inst1/*.png
 
 ### Instance 2
