@@ -3,7 +3,8 @@
 $file = file_get_contents('pdf-skeleton.md');
 
 $file = preg_replace_callback('/!include (.*)/', function($matches) {
-    return '#'.file_get_contents(trim($matches[1]));
+    $contents = @file_get_contents(trim($matches[1]));
+    return !empty($contents) ? '#'.$contents : '';
 }, $file);
 
 $file = preg_replace_callback('/!loop-images (.*)/', function($matches) {
