@@ -11,7 +11,7 @@ $file = preg_replace_callback('/!loop-images (.*)/', function($matches) {
     natsort($files);
 
     return implode("\n\n", array_map(function($v) {
-        return 'Instance '.pathinfo($v, PATHINFO_FILENAME)."\n".'<img src="'.$v.'">';
+        return '#### Instance '.pathinfo($v, PATHINFO_FILENAME)."\n".'<img src="'.$v.'">';
     }, $files));
 }, $file);
 
