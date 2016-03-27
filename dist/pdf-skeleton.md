@@ -38,7 +38,6 @@
 ## Image exports from task E
 
 ### Instance 2
-*(truncated to 50 items)*
 !loop-images instances/task-e/inst1/*.png
 
 ### Instance 2

@@ -11,9 +11,18 @@ $file = preg_replace_callback('/!loop-images (.*)/', function($matches) {
     $files = glob(trim($matches[1]));
     natsort($files);
 
-    return implode("\n\n", array_map(function($v) {
-        return '#### Instance '.pathinfo($v, PATHINFO_FILENAME)."\n".'<img src="'.$v.'">';
+    $text = '';
+
+    if (count($files) >= 10) { // some cheating - less work for me
+        $text = '*(output truncated to 10 images)*'."\n";
+        $files = array_slice($files, 0, 10);
+    }
+
+    $text .= implode("\n\n", array_map(function($v) {
+        return '#### Screen '.pathinfo($v, PATHINFO_FILENAME)."\n".'<img src="'.$v.'">';
     }, $files));
+
+    return $text;
 }, $file);
 
 file_put_contents('pdf.md', $file);
