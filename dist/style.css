@@ -49,3 +49,7 @@ table {
 body {
     font-family: sans-serif;
 }
+
+.break-after {
+    page-break-after: always;
+}

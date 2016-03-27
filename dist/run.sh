@@ -1,4 +1,5 @@
 rm hand-in.zip
+rm hand-in.pdf
 
 mkdir src
 mkdir xml
@@ -13,7 +14,7 @@ php gather-files.php
 
 php parse-md.php
 marked pdf.md -o out.html
-wkhtmltopdf out.html hand-in.pdf
+wkhtmltopdf --print-media-type out.html hand-in.pdf
 
 rm -r src/
 rm -r xml/
