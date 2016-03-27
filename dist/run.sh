@@ -14,7 +14,7 @@ php gather-files.php
 
 php parse-md.php
 marked pdf.md -o out.html
-wkhtmltopdf --print-media-type out.html hand-in.pdf
+wkhtmltopdf --print-media-type --orientation landscape out.html hand-in.pdf
 
 rm -r src/
 rm -r xml/
