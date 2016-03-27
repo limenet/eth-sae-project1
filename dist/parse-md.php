@@ -14,7 +14,7 @@ $file = preg_replace_callback('/!loop-images (.*)/', function($matches) {
     $text = '';
 
     if (count($files) > 1) { // some cheating - less work for me
-        $text .= '*(We only show one screen per generated image.)*'."\n";
+        // $text .= '*(We only show one screen per generated instance.)*'."\n\n";
         $files = array_slice($files, 0, 1);
     }
 
