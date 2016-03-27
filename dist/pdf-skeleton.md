@@ -1,3 +1,7 @@
+<style>
+!include style.css
+</style>
+
 # ETH SAE Project 1 - Sherlock
 
 ## UML class diagram
