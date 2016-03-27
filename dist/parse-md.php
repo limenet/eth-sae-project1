@@ -13,13 +13,17 @@ $file = preg_replace_callback('/!loop-images (.*)/', function($matches) {
 
     $text = '';
 
-    if (count($files) >= 10) { // some cheating - less work for me
-        $text = '*(output truncated to 10 images)*'."\n";
-        $files = array_slice($files, 0, 10);
+    if (count($files) > 1) { // some cheating - less work for me
+        $text .= '*(We only show one screen per generated image.)*'."\n";
+        $files = array_slice($files, 0, 1);
     }
 
     $text .= implode("\n\n", array_map(function($v) {
-        return '#### Screen '.pathinfo($v, PATHINFO_FILENAME)."\n".'<img src="'.$v.'">';
+        $output = '';
+        // $output .= '#### Screen '.pathinfo($v, PATHINFO_FILENAME)."\n";
+        $output .= '<img src="'.$v.'">';
+
+        return $output;
     }, $files));
 
     return $text;
