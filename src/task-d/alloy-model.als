@@ -1,40 +1,28 @@
-/* TODO
- Simplify the model to BOOLEANLINEAR - done
- Add the model of executions - done
- signature Execution - done
- signature Value - done
- functions - done
- generate instances (task E) - done - explanation for infeasibility pending
- check multiplicities - done
- use functions - done
-*/
-
 // ---------- Instances for task E --------------------------------------------------- //
-
 
 // A program that takes 2 arguments and computes AND.
 pred inst1 {
-  #MainFunction.formals = 2 &&
+  all disj e1, e2: Execution | e1.inputs != e2.inputs &&
   all e: Execution, disj fp, fp': MainFunction.formals |
     (p_argval[e, MainFunction, fp] = True && p_argval[e, MainFunction, fp'] = True)
     implies (p_retval[e, MainFunction] = True)
     else (p_retval[e, MainFunction] = False)
 }
-run inst1
+run inst1 for exactly 4 Execution, 1 Function, 1 Statement, 2 FormalParameter, 3 Expr, 2 Variable
 
 // A program that takes 2 arguments and computes NAND.
 pred inst2 {
-  #MainFunction.formals = 2 &&
+  all disj e1, e2: Execution | e1.inputs != e2.inputs &&
   all e: Execution, disj fp, fp': MainFunction.formals |
     (p_argval[e, MainFunction, fp] = True && p_argval[e, MainFunction, fp'] = True)
     implies (p_retval[e, MainFunction] = False)
     else (p_retval[e, MainFunction] = True)
 }
-run inst2
+run inst2 for exactly 4 Execution, 1 Function, 1 Statement, 2 FormalParameter, 4 Expr, 2 Variable
 
 // A program that takes 2 arguments, has at least one literal and one assignment and computes OR.
 pred inst3 {
-  #MainFunction.formals = 2 &&
+  all disj e1, e2: Execution | e1.inputs != e2.inputs &&
   some Literal &&
   some AssignStatement &&
   all e: Execution, disj fp, fp': MainFunction.formals |
@@ -42,31 +30,36 @@ pred inst3 {
     implies (p_retval[e, MainFunction] = False)
     else (p_retval[e, MainFunction] = True)
 }
-run inst3
+// A OR B = !(!(A && True) && !B)
+run inst3 for exactly 4 Execution, 1 Function, 3 Statement, 2 FormalParameter, 9 Expr, 3 Variable
 
 // A program that takes 2 arguments and computes XOR.
 pred inst4 {
-  #MainFunction.formals = 2 &&
+  all disj e1, e2: Execution | e1.inputs != e2.inputs &&
   all e: Execution, disj fp, fp': MainFunction.formals |
-    (p_argval[e, MainFunction, fp] = False && p_argval[e, MainFunction, fp'] = False) or (p_argval[e, MainFunction, fp] = True && p_argval[e, MainFunction, fp'] = True)
+    ((p_argval[e, MainFunction, fp] = False && p_argval[e, MainFunction, fp'] = False) or (p_argval[e, MainFunction, fp] = True && p_argval[e, MainFunction, fp'] = True))
     implies (p_retval[e, MainFunction] = False)
     else (p_retval[e, MainFunction] = True)
 }
-run inst4
+// A XOR B = !(A && B) && !(!A && !B)
+run inst4 for exactly 4 Execution, 1 Function, 1 Statement, 2 FormalParameter, 11 Expr, 4 VariableReference, 3 AndExpr, 4 NotExpr, 2 Variable
 
 // A program that takes 2 arguments, has 3 functions and at least one assignment and computes NAND.
 // Here, one function that is not the main function should contain an And, and the other function that is not the main function should contain a Not.
 pred inst5 {
+  all disj e1, e2: Execution | e1.inputs != e2.inputs &&
   #MainFunction.formals = 2 &&
-  #Function = 3 &&
   some AssignStatement &&
-  some disj f, f': (Function - MainFunction) | (one f.statements.exprs.*children :> AndExpr && one f'.statements.exprs.*children :> NotExpr) &&
+  some disj f, f': (Function - MainFunction) | (one (f.statements.exprs :> AndExpr) && one (f'.statements.exprs :> NotExpr)) &&
   all e: Execution, disj fp, fp': MainFunction.formals |
     (p_argval[e, MainFunction, fp] = True && p_argval[e, MainFunction, fp'] = True)
     implies (p_retval[e, MainFunction] = False)
     else (p_retval[e, MainFunction] = True)
 }
-run inst5
+// main (p1, p2) { decl v; v = f_and(p1, p2); return f_not(v); }
+// f_and (p1, p2) { return p1 && p2; }
+// f_not (p) { return not p; }
+run inst5 for exactly 4 Execution, 3 Function, 5 Statement, 5 FormalParameter, 10 Expr, 6 Variable
 
 // ---------- Dynamic Model of task D ---------------------------------------------- //
 
