@@ -1,6 +1,5 @@
 // ---------- Instances for task E --------------------------------------------------- //
 
-
 // A program that takes 2 arguments and computes AND.
 pred inst1 {
   all disj e1, e2: Execution | e1.inputs != e2.inputs &&
