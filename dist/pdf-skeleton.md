@@ -23,6 +23,7 @@
 !include ../src/task-c/non-feasible-instances.md
 
 ## Image exports from task C
+(We only show one screen per generated instance.)
 
 ### Instance 2
 !loop-images instances/task-c/inst2/*.png
@@ -36,6 +37,7 @@
 !include ../src/task-e/non-feasible-instances.md
 
 ## Image exports from task E
+(We only show one screen per generated instance.)
 
 ### Instance 1
 !loop-images instances/task-e/inst1/*.png
