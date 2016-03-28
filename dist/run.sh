@@ -1,5 +1,4 @@
 rm hand-in.zip
-rm hand-in.pdf
 
 mkdir src
 mkdir xml
@@ -10,13 +9,15 @@ cp ../src/task-d/alloy-model.als src/task-d_alloy-model.als
 
 php gather-files.php
 
-7z a "hand-in.zip" "src" "xml"
 
 php parse-md.php
 marked pdf.md -o out.html
 wkhtmltopdf --print-media-type --orientation landscape out.html hand-in.pdf
 
+7z a "hand-in.zip" "src" "xml" "hand-in.pdf"
+
 rm -r src/
 rm -r xml/
 rm out.html
 rm pdf.md
+rm hand-in.pdf
