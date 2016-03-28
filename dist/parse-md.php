@@ -2,12 +2,13 @@
 
 $file = file_get_contents('pdf-skeleton.md');
 
-$file = preg_replace_callback('/!include (.*)/', function($matches) {
+$file = preg_replace_callback('/!include (.*)/', function ($matches) {
     $contents = @file_get_contents(trim($matches[1]));
+
     return !empty($contents) ? '#'.$contents : '';
 }, $file);
 
-$file = preg_replace_callback('/!loop-images (.*)/', function($matches) {
+$file = preg_replace_callback('/!loop-images (.*)/', function ($matches) {
     $files = glob(trim($matches[1]));
     natsort($files);
 
@@ -18,7 +19,7 @@ $file = preg_replace_callback('/!loop-images (.*)/', function($matches) {
         $files = array_slice($files, 0, 1);
     }
 
-    $text .= implode("\n\n", array_map(function($v) {
+    $text .= implode("\n\n", array_map(function ($v) {
         $output = '';
         // $output .= '#### Screen '.pathinfo($v, PATHINFO_FILENAME)."\n";
         $output .= '<img src="'.$v.'">';
