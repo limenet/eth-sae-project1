@@ -258,7 +258,9 @@ fact {
 
 // Variables are declared exactly once, either in a corresponding declaration statement or as function parameter.
 fact {
-  all v: Variable | p_isDeclared[v]
+  all v: Variable |
+    (v in (VarDecl.declaredVar + FormalParameter.declaredVar)) && // at least once
+    (v not in (VarDecl.declaredVar & FormalParameter.declaredVar)) // at most once
 }
 
 // A variable that has been declared can be assigned to using an assignment statement.
@@ -271,14 +273,13 @@ fact {
   all s: Statement | all v: s.exprs.reads | !p_isParameter[v] implies some a: AssignStatement | (v = a.assignedTo) && (s in p_statementsAfter[a])
 }
 
-// We do not allow dead variables (variables that are never read).
+// We do not allow dead variables (variables that are not parameters and are never read).
 fact {
-  all v: Variable | p_isRead[v]
+  all v: Variable | p_isDeclared[v] implies p_isRead[v]
 }
 
 // We do not allow dead assignments (assignments that are not followed by a read of the variable).
 fact {
-//  all a: AssignStatement | a.assignedTo in p_statementsAfter[a].exprs.reads // assignment is followed by any read of the variable, not necessary the assigned value
   all a: AssignStatement, v: a.assignedTo | some s: p_statementsAfter[a] | v in s.exprs.reads && (no s': (p_statementsAfter[a] - p_statementsAfter[s]) | v= s'.assignedTo)
 }
 
@@ -296,7 +297,7 @@ fact {
 fact {
   (parent = ~children) && (no e: Expr | e in e.^children) && // parent/children relationship has no cycles
   ((Statement.exprs + Expr.children) = Expr) && // all expressions have a parent
-  (no (Statement.exprs & Expr.children)) && (no (Statement.assignedValue & Statement.returnValue)) && // parents are unique
+  (no (Statement.exprs & Expr.children)) && (no (Statement.assignedValue & Statement.returnValue)) && // Every node has at most one parent.
   (children = actuals.FormalParameter + leftChild + rightChild + child) &&
   (all ae: AndExpr | ae.leftChild != ae.rightChild)
 }
@@ -349,10 +350,9 @@ pred p_isRead [v: Variable] {
   v in VariableReference.referredVar
 }
 
-// true iff v is declared exactly once.
+// true iff v is declared through a variable declaration.
 pred p_isDeclared [v: Variable] {
-  (v in (VarDecl.declaredVar + FormalParameter.declaredVar)) && // at least once
-  (v not in (VarDecl.declaredVar & FormalParameter.declaredVar)) // at most once
+  v in VarDecl.declaredVar
 }
 
 // true iff v is declared as a parameter.
